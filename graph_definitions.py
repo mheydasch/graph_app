@@ -11,15 +11,17 @@ import numpy as np
 import re
 import pandas as pd
 #%%
-def lineplot(dat, testmode=False):
+def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_column='', testmode=False):
     '''
     testmode: If testomde is set to True only the first 10 items will be used in the graph
     '''     
-    cells=list(dat['unique_id'].unique())
-   
+    print(identifier_column)
+    print(type(identifier_column))
+    cells=list(dat[identifier_column].unique())
+    
     if testmode==True:
         
-        cells=cells[0:10]
+        cells=cells[0:100]
    
 
 
@@ -32,8 +34,8 @@ def lineplot(dat, testmode=False):
     for c in cells:   
         #appending x, y data based on current cell to the list of traces
         traces.append(go.Scatter(
-        x=dat.loc[dat['unique_id']==c]['Location_Center_X_Zeroed'],        
-        y=dat.loc[dat['unique_id']==c]['Location_Center_Y_Zeroed']
+        x=dat.loc[dat[identifier_column]==c]['Location_Center_X_Zeroed'],        
+        y=dat.loc[dat[identifier_column]==c]['Location_Center_Y_Zeroed']
         )
     )
     print('...done')
@@ -42,3 +44,5 @@ def lineplot(dat, testmode=False):
 #%%
 def whiskerplot(dat, testmode=False):
     print()
+    
+

@@ -37,7 +37,7 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 #%%uploading data
-path='/Volumes/imaging.data/Max/REF52/beta_pix/pix_5/beta_pix_5_data.csv'
+path='/Users/max/Desktop/beta_pix_5_data.csv'
 data=pd.read_csv(path)
 
 #%% defining table properties
