@@ -23,7 +23,8 @@ import os
 
 sys.path.append(os.path.realpath(__file__))
 import graph_definitions as GD
-import algorythm_definitions as AD
+import menu_definitions as MD
+
 
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -32,6 +33,11 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 app.config['suppress_callback_exceptions'] = True
 
 '''
+Dependencies:
+menus and buttons are defined in the file menu_definitions.py
+graphs are defined in the file graph_definitions.py
+other functions for calculations on data are defined in algorythm_definitions.py
+
 To Dos:
 graph needs to be stored and retrieved
 add selector for values from dataframe. 
@@ -41,94 +47,7 @@ add bar graph for persistance plots data
 global df
 df=pd.DataFrame({'col1':[1, 2]})
 
-#The following functions define several menus and are called in the initial
-#layout when the app is launched
-#radio item layout
-def RadioItems():
-    return dcc.RadioItems(
-    options=[
-        {'label': 'lineplot', 'value': 'lineplot'},
-        {'label': 'None', 'value' : 'None'}
 
-    ],
-    value='None',
-    id='graph_selector')
-#table layout
-def generate_table(df):
-    '''
-    called when data is uploaded
-    '''
-    return dash_table.DataTable(
-                data=df.to_dict('records'),
-                columns=[{'name': i, 'id': i} for i in df.columns],
-                fixed_rows={'headers':True, 'data':0},
-                style_cell={'width' :'150px'}
-            )
-#dropdown layout
-def classifier_choice(df):
-    '''
-    dropdown menu to select which column should be used as the classifier
-    '''
-    columns=df.columns
-    classifieroptions= [{'label' :k, 'value' :k} for k in columns]
-    return dcc.Dropdown(
-            #label='Classifier Column',
-            id='classifier_choice',
-            options=classifieroptions,
-            placeholder='select the classifier column')
-def identifier_selector(df):
-    '''
-    dropdown menu to select the column which identifies individual cells
-    '''
-    columns=df.columns
-    identifieroptions= [{'label' :k, 'value' :k} for k in columns]
-    return dcc.Dropdown(
-            id='identifier_selector',
-            options=identifieroptions,
-            placeholder='select the identifier column')
-   
-def timepoint_selector(df):    
-    '''
-    dropdown menu to select which column contains the information about timepoints
-    '''
-    columns=df.columns
-    timepointoptions= [{'label' :k, 'value' :k} for k in columns]
-    return dcc.Dropdown(
-            id='timepoint_selector',
-            options=timepointoptions,
-            placeholder='select the timepoint column')
-
-def track_length_selector():
-    
-    '''
-
-    slider to select data cleaning method
-    '''
-    return dcc.Slider(
-            id='track_length_selector',
-            min=0,
-            #for the future add a timepoint column selector for dynamic max lenght
-            max=10,
-            step=1,
-            value=0,
-            marks={0:'0',
-                   5:'5',
-                   10:'10'})
-def datatype_selector():
-    return dcc.RadioItems(options=[
-        {'label': 'X, Y coordinates', 'value': 'xy'},
-        {'label': 'individual features', 'value' : 'features'}
-
-    ],
-    value='xy',
-    id='datatype_selector')
-def data_selector(df):
-    columns=df.columns
-    data_options= [{'label' :k, 'value' :k} for k in columns]
-    return dcc.Dropdown(
-            id='data_selector',
-            options=data_options,
-            multi=True)
 #%%    
 app.layout = html.Div([
     
@@ -151,22 +70,26 @@ app.layout = html.Div([
         # Allow multiple files to be uploaded
         multiple=True
     ),
+    #calling the table
     html.Table(id='output-data-upload'),
-    RadioItems(),
-    track_length_selector(),
+    MD.RadioItems(),
+    #calling menus
+    MD.track_length_selector(),
     html.Div(id='track_length_output', style={'margin-top': 20} ),
     html.Hr(),
     dcc.Markdown('''**Data organization**'''),
     html.P('How is your data formatted?'),
-    datatype_selector(),
+    MD.datatype_selector(),
     html.P('Select the columns that hold your data, if x,y coordinates, first selected is treated as x coordinate:'),
-    data_selector(df),
+    MD.data_selector(df),
     html.P('Select the column which holds the classifier of your groups:'),
-    classifier_choice(df),
+    MD.classifier_choice(df),
     html.P('Select the column which holds the identifier for each unique item:'),
-    identifier_selector(df),
+    MD.identifier_selector(df),
     html.P('Select the column which holds the timepoints:'),
-    timepoint_selector(df),    
+    MD.timepoint_selector(df),  
+    MD.plot_button(),
+    #calling the graph
     dcc.Graph(id='migration_data'),
     #hidden divs for storing data
     html.Div(id='shared_data', style={'display':'none'})
@@ -203,20 +126,13 @@ def parse_contents(contents, filename, date):
         html.H5(filename),
         html.H6(datetime.datetime.fromtimestamp(date)),
 
-        generate_table(df),
-        html.Hr(),  # horizontal line
-
-        # For debugging, display the raw contents provided by the web browser
-        html.Div('Raw Content'),
-        html.Pre(contents[0:200] + '...', style={
-            'whiteSpace': 'pre-wrap',
-            'wordBreak': 'break-all'
-        })
-    ])
+        MD.generate_table(df),
+        #horizontal line
+        html.Hr() ])
 
 #%% update after upload
 @app.callback(Output('output-data-upload', 'children'),
-              #Output('shared_data', 'children')],
+              
               [Input('upload-data', 'contents')],
               [State('upload-data', 'filename'),
                State('upload-data', 'last_modified')])
@@ -241,36 +157,16 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
 
 def update_dropdown(contents):
     columns=df.columns
-    print(columns)
     col_labels=[{'label' :k, 'value' :k} for k in columns]
     identifier_cols=col_labels
     timepoint_cols=col_labels
     data_cols=col_labels
     return col_labels, identifier_cols, timepoint_cols, data_cols
 
-#%% update graph picker
-
-#creates a figure when the plot data is selected.
-#also takes the states of the dropdown menus: classifier_choice, identifier_selector
-#and timepoint_selector and feeds it as options to the graph.
-#it takes the data from the hidden div 'shared_data' as input data for the graph
-@app.callback(Output('migration_data', 'figure'),
-              [Input('graph_selector', 'value'),
-               Input('shared_data', 'children')],
-              [State('classifier_choice', 'value'),
-               State('identifier_selector', 'value'),
-               State('timepoint_selector', 'value')])
-
-def plot_graph(graph_selector, shared_data, classifier_choice, identifier_selector, timepoint_selector):
-    dff=pd.read_json(shared_data, orient='split')
-    graph_options={'None':print(), 'lineplot':GD.lineplot}
-    return graph_options[graph_selector](dat=dff, classifier_column=classifier_choice, 
-                        identifier_column=identifier_selector,
-                        timepoint_column=timepoint_selector, testmode=True)
-
 #is called once you select a column from the timepoint_selector dropdown menu
 @app.callback([Output('track_length_selector', 'max'),
-             Output('track_length_selector', 'marks')],
+             Output('track_length_selector', 'marks'),
+             Output('track_length_selector', 'value')],
              [Input('timepoint_selector', 'value')])
 #gets the minimum and maxium value of the timepoint column as selected
 #and adjusts min and max values of the track_length_selector slider as first output
@@ -279,9 +175,10 @@ def get_max_timepoints(timepoint_selector):
     min_timepoint=df[timepoint_selector].min()
     max_timepoint=df[timepoint_selector].max()
     marks={}
+    value=0
     for m in range(min_timepoint, max_timepoint, 5):
         marks.update({m:str(m)})
-    return max_timepoint, marks
+    return max_timepoint, marks, value
 
 #gets called when you select a value on the track_length_selector slider
 @app.callback([Output('track_length_output', 'children'),
@@ -307,6 +204,29 @@ def display_value(track_length_selector,  identifier_selector, timepoint_selecto
     thresholded_data=df.loc[df[identifier_selector].isin(track_ids)]
 
     return display_string, thresholded_data.to_json(date_format='iso', orient='split')
+#%% update graph 
+
+#creates a figure when the display plots button is pressed.
+#also takes the states of the dropdown menus: classifier_choice, identifier_selector
+#and timepoint_selector and feeds it as options to the graph.
+#it takes the data from the hidden div 'shared_data' as input data for the graph
+@app.callback(Output('migration_data', 'figure'),
+              [Input('plot_button', 'n_clicks')],
+              [State('graph_selector', 'value'),
+               State('shared_data', 'children'),
+               State('classifier_choice', 'value'),
+               State('identifier_selector', 'value'),
+               State('timepoint_selector', 'value'),
+               State('data_selector', 'value')])
+
+def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice, identifier_selector, timepoint_selector, data_selector):
+    dff=pd.read_json(shared_data, orient='split')
+    graph_options={'None':print(), 'lineplot':GD.lineplot, 'whiskerplot':GD.whiskerplot}
+    return graph_options[graph_selector](dat=dff, classifier_column=classifier_choice, 
+                        identifier_column=identifier_selector,
+                        timepoint_column=timepoint_selector, data_column=data_selector, testmode=False)
+
+
 
 
 
