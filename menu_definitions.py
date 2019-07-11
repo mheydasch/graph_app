@@ -19,7 +19,7 @@ def RadioItems():
     options=[
         {'label': 'lineplot', 'value': 'lineplot'},
         {'label': 'None', 'value' : 'None'},
-         {'label':'whiskerplot', 'value': 'whiskerplot'}],
+         {'label':'migration_distance', 'value': 'migration_distance'},],
     value='None',
     id='graph_selector')
 #table layout

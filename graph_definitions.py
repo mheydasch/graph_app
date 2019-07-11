@@ -73,8 +73,32 @@ def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_colum
         
     return fig
 #%%
-def whiskerplot(dat=[], classifier_column='', identifier_column='', timepoint_column='', data_column='', testmode=False):
+def migration_distance(dat=[], classifier_column='', identifier_column='', timepoint_column='', data_column='', testmode=False):
+    if testmode==True:
+        dat=dat[0:1000]
+    print('calculating distances...')
     distances=AD.calc_dist(dat=dat, classifier_column=classifier_column, identifier_column=identifier_column, timepoint_column=timepoint_column, data_column=data_column)
-    print(distances)
+    print('...done calculating')
+    classes=list(distances[classifier_column].unique())
+    fig=tools.make_subplots(rows=1, cols=2, subplot_titles=['Cumulative distance','Persistence'])
+
+    for xpos, i in enumerate(classes):
+        fig.append_trace(trace=go.Box(
+        y=distances.loc[distances[classifier_column]==i]['cumulative_distance'],
+        #x=[xpos],
+        name=i,
+        boxpoints='all'), 
+        row=1, col=1)
+
+
+    for xpos, i in enumerate(classes):
+        fig.append_trace(trace=go.Box(
+        y=distances.loc[distances[classifier_column]==i]['persistence'],
+        #x=[xpos],
+        name=i,
+        boxpoints='all'), 
+        row=1, col=2)
+
+    return fig
     
 

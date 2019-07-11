@@ -9,7 +9,7 @@ import pandas as pd
 #import re
 import numpy as np
 #%%
-def calc_dist(dat=[], classifier_column='', identifier_column='', timepoint_column='', data_column=''):
+def calc_dist(dat=[], classifier_column='Classifier', identifier_column='unique_id', timepoint_column='Metadata_Timepoint', data_column=['Location_Center_X_Zeroed','Location_Center_Y_Zeroed']):
     l=[]
     cells=list(dat[identifier_column].unique())
     #looping through each unique cell
@@ -20,6 +20,7 @@ def calc_dist(dat=[], classifier_column='', identifier_column='', timepoint_colu
         Y_column=data_column[1]
         #sorting the data by time
         single_track=single_track.sort_values(by=[timepoint_column])
+        single_track=single_track.reset_index()
         #calculating x and y step sizes over the whole timecourse
         xd=single_track[X_column][0:].reset_index()-single_track[X_column][1:].reset_index()
         yd=single_track[Y_column][0:].reset_index()-single_track[Y_column][1:].reset_index()
