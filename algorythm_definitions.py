@@ -4,6 +4,8 @@
 Created on Mon Jul  8 15:03:10 2019
 
 @author: max
+
+Holds definitions for several calculations
 """
 import pandas as pd
 #import re

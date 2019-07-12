@@ -4,6 +4,8 @@
 Created on Thu Jul 11 12:06:05 2019
 
 @author: max
+
+Holds the menu definition, such as buttons and dropdown menus
 """
 
 import dash_core_components as dcc
@@ -85,6 +87,11 @@ def track_length_selector():
             marks={0:'0',
                    5:'5',
                    10:'10'})
+def distance_filter():
+    return dcc.Input(placeholder='Enter a value...',
+                     type='number',
+                     value=0,
+                     id='distance_filter')
 def datatype_selector():
     return dcc.RadioItems(options=[
         {'label': 'X, Y coordinates', 'value': 'xy'},

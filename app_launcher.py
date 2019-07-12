@@ -33,15 +33,15 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 app.config['suppress_callback_exceptions'] = True
 
 '''
+Holds interface and callback definitions for the app. This is the script that
+launches it
+
 Dependencies:
 menus and buttons are defined in the file menu_definitions.py
 graphs are defined in the file graph_definitions.py
 other functions for calculations on data are defined in algorythm_definitions.py
 
-To Dos:
-graph needs to be stored and retrieved
-add selector for values from dataframe. 
-add bar graph for persistance plots data
+
 '''
 
 
@@ -51,8 +51,6 @@ add bar graph for persistance plots data
 #%% app upload
 global df
 df=pd.DataFrame({'col1':[1, 2]})
-
-
 #%%    
 app.layout = html.Div([
     
@@ -75,12 +73,7 @@ app.layout = html.Div([
         # Allow multiple files to be uploaded
         multiple=True
     ),
-    #calling the table
-    html.Table(id='output-data-upload'),
-    MD.RadioItems(),
     #calling menus
-    MD.track_length_selector(),
-    html.Div(id='track_length_output', style={'margin-top': 20} ),
     html.Hr(),
     dcc.Markdown('''**Data organization**'''),
     html.P('How is your data formatted?'),
@@ -93,7 +86,17 @@ app.layout = html.Div([
     MD.identifier_selector(df),
     html.P('Select the column which holds the timepoints:'),
     MD.timepoint_selector(df),  
+    html.Hr(),
+    dcc.Markdown('''**Data filtering**'''), 
+    MD.RadioItems(),
+    html.P('Select the minimum track length'),
+    MD.track_length_selector(),
+    html.Div(id='track_length_output', style={'margin-top': 20} ),
+    html.P('Select the minimum travelled distance'),
+    MD.distance_filter(),
     MD.plot_button(),
+    #calling the table
+    html.Table(id='output-data-upload'),
     #calling the graph
     dcc.Graph(id='migration_data'),
     #hidden divs for storing data
@@ -222,21 +225,20 @@ def display_value(track_length_selector,  identifier_selector, timepoint_selecto
                State('classifier_choice', 'value'),
                State('identifier_selector', 'value'),
                State('timepoint_selector', 'value'),
-               State('data_selector', 'value')])
+               State('data_selector', 'value'),
+               State('distance_filter', 'value')])
 
-def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice, identifier_selector, timepoint_selector, data_selector):
+def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice, identifier_selector, timepoint_selector, data_selector, distance_filter):
     dff=pd.read_json(shared_data, orient='split')
     graph_options={'None':print(), 'lineplot':GD.lineplot, 'migration_distance':GD.migration_distance}
     return graph_options[graph_selector](dat=dff, classifier_column=classifier_choice, 
                         identifier_column=identifier_selector,
-                        timepoint_column=timepoint_selector, data_column=data_selector, testmode=False)
+                        timepoint_column=timepoint_selector, data_column=data_selector, distance_filter=distance_filter, testmode=False)
 
 
 
 
 
 #%%
-
-
 if __name__ == '__main__':
     app.run_server(debug=True)

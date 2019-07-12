@@ -4,7 +4,11 @@
 Created on Fri Jun 28 15:45:15 2019
 
 @author: max
+Holds the graph definitions for the app.
+
 """
+
+
 import plotly.plotly as py
 import plotly.graph_objs as go
 from plotly import tools
@@ -15,7 +19,7 @@ import numpy as np
 sys.path.append(os.path.realpath(__file__))
 import algorythm_definitions as AD
 #%%
-def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_column='', data_column='', testmode=False):
+def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_column='', data_column='', distance_filter='', testmode=False):
     '''
     testmode: If testomde is set to True only the first 10 items will be used in the graph
     '''     
@@ -73,11 +77,14 @@ def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_colum
         
     return fig
 #%%
-def migration_distance(dat=[], classifier_column='', identifier_column='', timepoint_column='', data_column='', testmode=False):
+def migration_distance(dat=[], classifier_column='', identifier_column='', timepoint_column='', data_column='', distance_filter='', testmode=False):
     if testmode==True:
         dat=dat[0:1000]
     print('calculating distances...')
+    #calculating the distances and persistence of migration
     distances=AD.calc_dist(dat=dat, classifier_column=classifier_column, identifier_column=identifier_column, timepoint_column=timepoint_column, data_column=data_column)
+    #filtering the distances by a minimum cumulative distance
+    distances=distances[distances['cumulative_distance']>distance_filter]
     print('...done calculating')
     classes=list(distances[classifier_column].unique())
     fig=tools.make_subplots(rows=1, cols=2, subplot_titles=['Cumulative distance','Persistence'])
