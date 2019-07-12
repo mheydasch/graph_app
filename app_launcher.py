@@ -51,9 +51,9 @@ other functions for calculations on data are defined in algorythm_definitions.py
 #%% app upload
 global df
 df=pd.DataFrame({'col1':[1, 2]})
-#%%    
-app.layout = html.Div([
+#%%
     
+app.layout = html.Div([
     dcc.Upload(
         id='upload-data',
         children=html.Div([
@@ -95,10 +95,14 @@ app.layout = html.Div([
     html.P('Select the minimum travelled distance'),
     MD.distance_filter(),
     MD.plot_button(),
-    #calling the table
-    html.Table(id='output-data-upload'),
-    #calling the graph
-    dcc.Graph(id='migration_data'),
+    dcc.Tabs(id='tabs', children=[
+             dcc.Tab(label='tab one', 
+                     children= [html.Table(id='output-data-upload')]),    #calling the table
+                             
+             dcc.Tab(label='tab two',
+                     #calling the graph 
+                     children= dcc.Graph(id='migration_data'),)]),
+
     #hidden divs for storing data
     html.Div(id='shared_data', style={'display':'none'})
 ])
