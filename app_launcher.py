@@ -51,28 +51,31 @@ other functions for calculations on data are defined in algorythm_definitions.py
 #%% app upload
 global df
 df=pd.DataFrame({'col1':[1, 2]})
+
 #%%
     
 app.layout = html.Div([
+    html.P('Upload the csv file holding your data:'),
     dcc.Upload(
-        id='upload-data',
-        children=html.Div([
-            'Drag and Drop or ',
-            html.A('Select Files')
-        ]),
-        style={
-            'width': '100%',
-            'height': '60px',
-            'lineHeight': '60px',
-            'borderWidth': '1px',
-            'borderStyle': 'dashed',
-            'borderRadius': '5px',
-            'textAlign': 'center',
-            'margin': '10px'
-        },
-        # Allow multiple files to be uploaded
-        multiple=True
-    ),
+    id='upload-data',
+    children=html.Div([
+        'Drag and Drop or ',
+        html.A('Select Files')
+    ]),
+    style={
+        'width': '100%',
+        'height': '60px',
+        'lineHeight': '60px',
+        'borderWidth': '1px',
+        'borderStyle': 'dashed',
+        'borderRadius': '5px',
+        'textAlign': 'center',
+        'margin': '10px'
+    },
+    # Allow multiple files to be uploaded
+    multiple=True), 
+    html.P('Upload the images associated to your data:'),
+    MD.Upload_images(),
     #calling menus
     html.Hr(),
     dcc.Markdown('''**Data organization**'''),
@@ -96,14 +99,18 @@ app.layout = html.Div([
     MD.distance_filter(),
     MD.plot_button(),
     dcc.Tabs(id='tabs', children=[
-             dcc.Tab(label='tab one', 
+             dcc.Tab(label='Table', 
                      children= [html.Table(id='output-data-upload')]),    #calling the table
                              
-             dcc.Tab(label='tab two',
+             dcc.Tab(label='Graph',
                      #calling the graph 
                      children= dcc.Graph(id='migration_data'),)]),
 
+    html.Div(id='output-image-upload', style={'display':'none'}),
+    #html.Img(data[0]),
+    html.Img(id='image-overlay'),
     #hidden divs for storing data
+    html.Div(id='test_image'),
     html.Div(id='shared_data', style={'display':'none'})
 ])
 
@@ -113,8 +120,11 @@ app.layout = html.Div([
 
 
 #%% upload function
-
 def parse_contents(contents, filename, date):
+    '''
+    parses contents of spreadsheath
+    '''
+
     content_type, content_string = contents.split(',')
 
     decoded = base64.b64decode(content_string)
@@ -141,6 +151,29 @@ def parse_contents(contents, filename, date):
         MD.generate_table(df),
         #horizontal line
         html.Hr() ])
+    
+    
+def parse_images(contents, filename, date):
+    '''
+    parses content of the images
+    '''
+    #print(filename)
+    return html.Div([
+        html.H5(filename),
+        html.H6(datetime.datetime.fromtimestamp(date)),
+
+        # HTML images accept base64 encoded strings in the same format
+        # that is supplied by the upload
+        html.Img(src=contents),
+        html.Hr(),
+        html.Div('Raw Content'),
+        html.Pre(contents[0:200] + '...', style={
+            'whiteSpace': 'pre-wrap',
+            'wordBreak': 'break-all'
+        })
+        
+    ])
+
 
 #%% update after upload
 @app.callback(Output('output-data-upload', 'children'),
@@ -149,13 +182,70 @@ def parse_contents(contents, filename, date):
               [State('upload-data', 'filename'),
                State('upload-data', 'last_modified')])
 #calls the upload function, updating the global variable df and also storing 
-#the same dataframe in the hidden Div 'shared_data'
+
 def update_output(list_of_contents, list_of_names, list_of_dates):
+    print(list_of_names)
+    print(list_of_dates)
     if list_of_contents is not None:
         children = [
             parse_contents(c, n, d) for c, n, d in
             zip(list_of_contents, list_of_names, list_of_dates)]
         return children#, df.to_json(date_format='iso', orient='split')
+#%%
+#updating image upload
+@app.callback([Output('output-image-upload', 'children'),
+              Output('output-image-upload', 'component')],
+              [Input('upload-image', 'contents')],
+              [State('upload-image', 'filename'),
+               State('upload-image', 'last_modified')])
+def update__images_output(list_of_contents, list_of_names, list_of_dates):
+    print(list_of_names)
+    images={}
+    if list_of_contents is not None:
+        children = [
+            parse_images(c, n, d) for c, n, d in
+            zip(list_of_contents, list_of_names, list_of_dates)]
+        for n, c in zip(list_of_names, list_of_contents):
+            images.update({n:c})
+        #print(images)
+        return children, images
+#display images test (works)
+# =============================================================================
+# @app.callback(Output('test_image', 'children'),
+#               [Input('output-image-upload', 'component')])
+# 
+# def image_display(image_dict):
+#     return  html.Div([
+#         html.Img(src=image_dict['Untitled.jpeg']),
+#         html.Hr(),
+#         html.Div('Raw Content'),
+#         html.Pre(image_dict['Untitled.jpeg'][0:200] + '...', style={
+#             'whiteSpace': 'pre-wrap',
+#             'wordBreak': 'break-all'
+#         })
+#         
+#     ])
+# =============================================================================
+#%%
+#image hoverdata
+
+  
+# =============================================================================
+# def update_image_output(images):
+#     #print(images)
+#     if not images:
+#         return
+#     for i, image_str in enumerate(images):
+#         image=image_str.split(',')[1]
+#         data= base64.decodebytes(image.encode('ascii'))
+#         with open(f'image_{i+1}.png', 'wb') as f:
+#             f.write(data)
+#     
+#     children=[parse_images(i) for i in images]
+# 
+#     return children
+#                 
+# =============================================================================
 #%% updating dropdown menus
 #gets called when data is uploaded. It does not actually use the input
 #from the upload, but gets the column names from the global variable df which is
@@ -239,6 +329,12 @@ def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice, identif
                         identifier_column=identifier_selector,
                         timepoint_column=timepoint_selector, data_column=data_selector, distance_filter=distance_filter, testmode=False)
 
+#%% Display image overlay
+@app.callback(Output('image-overlay', 'src'),
+              [Input('migration_data', 'hoverData')],
+              [State('output-image-upload','component')])
+def update_image_overlay(hoverData, image_dict):
+    return image_dict['Untitled.jpeg']
 
 
 
