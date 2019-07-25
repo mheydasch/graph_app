@@ -106,26 +106,63 @@ app.layout = html.Div([
     html.P('Select the minimum travelled distance'),
     MD.distance_filter(),
     MD.plot_button(),
+
+#tabs section start
     dcc.Tabs(id='tabs', children=[
              dcc.Tab(label='Table', 
                      children= [html.Table(id='output-data-upload')]),    #calling the table
                              
              dcc.Tab(label='Graph',
                      #calling the graph 
-                     children= dcc.Graph(id='migration_data'),)]),
+                     children= [html.Div([
+                                     
+                                     html.Div([dcc.Graph(id='migration_data')],
+                                          className= 'six columns'),
+                                     html.Div([html.Img(id='image-overlay',
+                                                        style={
+                                                            'height': '75%',
+                                                            'width': '75%',
+                                                            'float': 'right',
+                                                            'position': 'relative',
+                                                            'margin-top': 20,
+                                                            'margin-right': 20
+                                                                }),
+                                               html.Img(id='test_image',
+                                                        style={
+                                                            'height': '75%',
+                                                            'width': '75%',
+                                                            'float': 'right',
+                                                            'position': 'relative',
+                                                            'margin-top': 20,
+                                                            'margin-right': 20
+                                                                }
+                                                        
+                                                        )],
+                                          className='six columns'),
+                                               
+                                 ], className='row')]
+                                 
+                     )
+            ]),
+#tabs section end    
+           
+                                 
+        
+                             
+                    
+
+
+#html.Img(id='test_image')
 
     html.Div(id='output-image-upload', style={'display':'none'}),
-    #html.Img(data[0]),
-    #displays images based on hoverdata of graph
-    html.Img(id='image-overlay'),
-    #hidden divs for storing data
-    html.Img(id='test_image'),
+     #hidden divs for storing data
     html.Div(id='shared_data', style={'display':'none'}),
     #holding the type of the uploaded images
     html.Div(id='image_type', style={'display':'none'}),
     #holding the uploaded images
     html.Div(id='image_list', style={'display':'none'})
 ])
+    
 
 #%%layouts
 #table layout
@@ -380,7 +417,7 @@ def update_image_overlay(hoverData, image_dict, image_type, image_selector):
             #base 64 encode the image
             encoded=base64.b64encode(open(image, 'rb').read())
             #return the encoded image
-            return 'data:image/tiff;base64,{}'.format(encoded.decode())
+            return 'data:image/png;base64,{}'.format(encoded.decode())
             #break out of the loop once the first image is found
             break
 
