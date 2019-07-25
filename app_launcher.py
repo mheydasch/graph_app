@@ -9,6 +9,8 @@ Created on Mon Jul  1 13:11:11 2019
 import base64
 import datetime
 import io
+import numpy as np
+from PIL import Image
 
 import dash
 from dash.dependencies import Input, Output, State
@@ -19,6 +21,7 @@ import dash_html_components as html
 import pandas as pd
 import sys
 import os
+import re
 
 
 sys.path.append(os.path.realpath(__file__))
@@ -31,6 +34,7 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 app.config['suppress_callback_exceptions'] = True
+app.title='Visualisation_of_Data'
 
 '''
 Holds interface and callback definitions for the app. This is the script that
@@ -76,6 +80,10 @@ app.layout = html.Div([
     multiple=True), 
     html.P('Upload the images associated to your data:'),
     MD.Upload_images(),
+    MD.Image_folder(),
+    MD.Folder_submit(),
+    html.P('Do you have other channels that you want to merge?'),
+    MD.Image_selector(),
     #calling menus
     html.Hr(),
     dcc.Markdown('''**Data organization**'''),
@@ -108,10 +116,15 @@ app.layout = html.Div([
 
     html.Div(id='output-image-upload', style={'display':'none'}),
     #html.Img(data[0]),
+    #displays images based on hoverdata of graph
     html.Img(id='image-overlay'),
     #hidden divs for storing data
-    html.Div(id='test_image'),
-    html.Div(id='shared_data', style={'display':'none'})
+    html.Img(id='test_image'),
+    html.Div(id='shared_data', style={'display':'none'}),
+    #holding the type of the uploaded images
+    html.Div(id='image_type', style={'display':'none'}),
+    #holding the uploaded images
+    html.Div(id='image_list', style={'display':'none'})
 ])
 
 #%%layouts
@@ -175,7 +188,8 @@ def parse_images(contents, filename, date):
     ])
 
 
-#%% update after upload
+#%% update after data upload
+         
 @app.callback(Output('output-data-upload', 'children'),
               
               [Input('upload-data', 'contents')],
@@ -191,61 +205,75 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
             parse_contents(c, n, d) for c, n, d in
             zip(list_of_contents, list_of_names, list_of_dates)]
         return children#, df.to_json(date_format='iso', orient='split')
+#%% update after image folder got parsed 
+@app.callback(Output('image_list', 'component'),
+              [Input('Folder_submit', 'n_clicks')],
+              [State('Image_folder', 'value'),])
+#calls the upload function, updating the global variable df and also storing 
+def update(n_clicks, folder):
+    find_dir='overlays'
+    image_dict={}
+    print(folder)
+    print('uploading...')
+    for root, dirs, files in os.walk(folder):
+        #print(dirs)
+    #looks in each folder from given path
+    #if folder is matching the KD pattern, the find_dir pattern and
+    #if there are csv files
+        if find_dir in root and len([x for x in files])!=0:
+            #print(find_dir)
+            #finds the csv files in the folder and adds them to a list
+            image_files=[x for x in files]
+            for img in image_files:
+                #join image and full path
+                img_path=os.path.join(root, img)
+                #open and encode the image with base64 encoding
+                #encode=base64.b64encode(open(img_path, 'rb').read())
+                #update the dictionary
+                #image_dict.update({img:encode})     
+                image_dict.update({img:img_path})
+                #i_dirs.append(os.path.join(root, img)) 
+    #print(image_dict)
+    print('images uploaded')
+    return image_dict
+
+
 #%%
-#updating image upload
+#updating image upload of upload button
 @app.callback([Output('output-image-upload', 'children'),
-              Output('output-image-upload', 'component')],
+              Output('output-image-upload', 'component'),
+              Output('image_type', 'children')],
               [Input('upload-image', 'contents')],
               [State('upload-image', 'filename'),
                State('upload-image', 'last_modified')])
 def update__images_output(list_of_contents, list_of_names, list_of_dates):
     print(list_of_names)
+    patterns=[re.compile('\.tiff$'), re.compile('\.png$'), re.compile('\.tif$'), re.compile('\.TIF$'), re.compile('\.jpeg$'), re.compile('\.jpg$')]
+
+    
     images={}
     if list_of_contents is not None:
-        children = [
+        for p in patterns:
+            children = [
             parse_images(c, n, d) for c, n, d in
             zip(list_of_contents, list_of_names, list_of_dates)]
         for n, c in zip(list_of_names, list_of_contents):
+            #stores images in a dictionary with the filename as a key to the image
             images.update({n:c})
+        for p in patterns:
+            if re.search(p, n)!=None:
+                filetype=re.search(p, n).group()
+                break
         #print(images)
-        return children, images
-#display images test (works)
-# =============================================================================
-# @app.callback(Output('test_image', 'children'),
-#               [Input('output-image-upload', 'component')])
-# 
-# def image_display(image_dict):
-#     return  html.Div([
-#         html.Img(src=image_dict['Untitled.jpeg']),
-#         html.Hr(),
-#         html.Div('Raw Content'),
-#         html.Pre(image_dict['Untitled.jpeg'][0:200] + '...', style={
-#             'whiteSpace': 'pre-wrap',
-#             'wordBreak': 'break-all'
-#         })
-#         
-#     ])
-# =============================================================================
-#%%
-#image hoverdata
-
-  
-# =============================================================================
-# def update_image_output(images):
-#     #print(images)
-#     if not images:
-#         return
-#     for i, image_str in enumerate(images):
-#         image=image_str.split(',')[1]
-#         data= base64.decodebytes(image.encode('ascii'))
-#         with open(f'image_{i+1}.png', 'wb') as f:
-#             f.write(data)
-#     
-#     children=[parse_images(i) for i in images]
-# 
-#     return children
-#                 
-# =============================================================================
+        return children, images, filetype
+@app.callback(Output('test_image', 'src'),
+               [Input('output-image-upload', 'component')],
+               [State('upload-image', 'filename')])
+def display_image(component, filename):
+    print('displaying image')
+    print(filename)
+    return component[filename[0]]
+    
 #%% updating dropdown menus
 #gets called when data is uploaded. It does not actually use the input
 #from the upload, but gets the column names from the global variable df which is
@@ -332,9 +360,29 @@ def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice, identif
 #%% Display image overlay
 @app.callback(Output('image-overlay', 'src'),
               [Input('migration_data', 'hoverData')],
-              [State('output-image-upload','component')])
-def update_image_overlay(hoverData, image_dict):
-    return image_dict['Untitled.jpeg']
+              [State('image_list','component'),
+               State('image_type', 'children'),
+               State('Image_selector', 'value')])
+def update_image_overlay(hoverData, image_dict, image_type, image_selector):
+    #exclusion=re.compile('_E.+?(?=\.)')
+    print(image_type)
+    #removing discrepancies between hover text and filenames
+    exclusion=re.compile('_E+.*')
+    ID=hoverData['points'][0]['hovertext'].replace(re.search(exclusion, hoverData['points'][0]['hovertext']).group(),'')
+    #searching the dictionary for keys fitting the hovertext
+    for k in image_dict.keys():
+        if re.search(ID, k) !=None:           
+            #image_name=k.replace(re.search(exclusion, k).group(), '')
+            print(k)
+            print(ID)
+            #getting the image from the dictionary by using it's name as the key
+            image=image_dict[k]
+            #base 64 encode the image
+            encoded=base64.b64encode(open(image, 'rb').read())
+            #return the encoded image
+            return 'data:image/tiff;base64,{}'.format(encoded.decode())
+            #break out of the loop once the first image is found
+            break
 
 
 

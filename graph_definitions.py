@@ -60,8 +60,13 @@ def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_colum
         for c in cells:               
             #appending x, y data based on current cell to the list of traces
             fig.append_trace(trace=go.Scatter(
+            #getting x values
             x=dat_class.loc[dat_class[identifier_column]==c][X_column],
-            y=dat_class.loc[dat_class[identifier_column]==c][Y_column]),
+            #getting y values
+            y=dat_class.loc[dat_class[identifier_column]==c][Y_column],
+            #getting unique ID
+            hovertext=dat_class.loc[dat_class[identifier_column]==c][identifier_column]),
+
             row=int(rowlist[math.floor(r_i)]) , col=int(collist[c_i]))
             #c_i is reset to 0 every time it exceeds one, so that
             #only two columns will be plotted
@@ -92,6 +97,8 @@ def migration_distance(dat=[], classifier_column='', identifier_column='', timep
     for xpos, i in enumerate(classes):
         fig.append_trace(trace=go.Box(
         y=distances.loc[distances[classifier_column]==i]['cumulative_distance'],
+        hovertext=distances.loc[distances[classifier_column]==i][identifier_column],
+
         #x=[xpos],
         name=i,
         boxpoints='all'), 
@@ -101,6 +108,8 @@ def migration_distance(dat=[], classifier_column='', identifier_column='', timep
     for xpos, i in enumerate(classes):
         fig.append_trace(trace=go.Box(
         y=distances.loc[distances[classifier_column]==i]['persistence'],
+        hovertext=distances.loc[distances[classifier_column]==i][identifier_column],
+
         #x=[xpos],
         name=i,
         boxpoints='all'), 

@@ -1,0 +1,9 @@
+.DS_store
+
+*.png
+
+*.tiff
+
+*.tif
+
+__pycache__

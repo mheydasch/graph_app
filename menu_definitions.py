@@ -13,7 +13,7 @@ import dash_html_components as html
 import dash_table
 
 
-
+#%% data
 def Upload_data():
     return dcc.Upload(
         id='upload-data',
@@ -33,26 +33,6 @@ def Upload_data():
         },
         # Allow multiple files to be uploaded
         multiple=False
-    )
-def Upload_images():
-    return dcc.Upload(
-        id='upload-image',
-        children=html.Div([
-            'Drag and Drop or ',
-            html.A('Select Files')
-        ]),
-        style={
-            'width': '100%',
-            'height': '60px',
-            'lineHeight': '60px',
-            'borderWidth': '1px',
-            'borderStyle': 'dashed',
-            'borderRadius': '5px',
-            'textAlign': 'center',
-            'margin': '10px'
-        },
-        # Allow multiple files to be uploaded
-        multiple=True
     )
     
 #The following functions define several menus and are called in the initial
@@ -91,7 +71,8 @@ def classifier_choice(df):
             #label='Classifier Column',
             id='classifier_choice',
             options=classifieroptions,
-            placeholder='select the classifier column')
+            placeholder='select the classifier column',
+            value='Classifier')
 def identifier_selector(df):
     '''
     dropdown menu to select the column which identifies individual cells
@@ -101,7 +82,8 @@ def identifier_selector(df):
     return dcc.Dropdown(
             id='identifier_selector',
             options=identifieroptions,
-            placeholder='select the identifier column')
+            placeholder='select the identifier column',
+            value='unique_id')
    
 def timepoint_selector(df):    
     '''
@@ -112,7 +94,8 @@ def timepoint_selector(df):
     return dcc.Dropdown(
             id='timepoint_selector',
             options=timepointoptions,
-            placeholder='select the timepoint column')
+            placeholder='select the timepoint column',
+            value='Metadata_Timepoint')
 
 def track_length_selector():
     
@@ -137,9 +120,7 @@ def distance_filter():
 def datatype_selector():
     return dcc.RadioItems(options=[
         {'label': 'X, Y coordinates', 'value': 'xy'},
-        {'label': 'individual features', 'value' : 'features'}
-
-    ],
+        {'label': 'individual features', 'value' : 'features'}],
     value='xy',
     id='datatype_selector')
     
@@ -149,4 +130,41 @@ def data_selector(df):
     return dcc.Dropdown(
             id='data_selector',
             options=data_options,
-            multi=True)
+            multi=True,
+            value=['Location_Center_X_Zeroed', 'Location_Center_Y_Zeroed'])
+#%% images
+def Image_folder():
+    return dcc.Textarea(
+            placeholder='Enter the path to your images',
+            value='enter full path to your image',
+            style={'width':'100%'},
+            id='Image_folder')
+def Folder_submit():
+    return html.Button(id='Folder_submit', n_clicks=0, children='upload images')
+    
+def Upload_images():
+    return dcc.Upload(
+        id='upload-image',
+        children=html.Div([
+            'Drag and Drop or ',
+            html.A('Select Files')
+        ]),
+        style={
+            'width': '100%',
+            'height': '60px',
+            'lineHeight': '60px',
+            'borderWidth': '1px',
+            'borderStyle': 'dashed',
+            'borderRadius': '5px',
+            'textAlign': 'center',
+            'margin': '10px'
+        },
+        # Allow multiple files to be uploaded
+        multiple=True
+    )
+def Image_selector():
+    return dcc.RadioItems(options=[
+        {'label' : 'Yes', 'value': 'Yes'}, 
+        {'label': 'No', 'value' : 'No'}], 
+        value='No', 
+        id='Image_selector')
