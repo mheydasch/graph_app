@@ -42,7 +42,8 @@ def RadioItems():
     return dcc.RadioItems(
     options=[
         {'label': 'lineplot', 'value': 'lineplot'},
-         {'label':'migration_distance', 'value': 'migration_distance'},],
+         {'label':'migration_distance', 'value': 'migration_distance'},
+         {'label':'time_series', 'value':'time_series'}],
     value='lineplot',
     id='graph_selector')
 #table layout

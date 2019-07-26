@@ -398,7 +398,7 @@ def display_value(track_length_selector,  identifier_selector, timepoint_selecto
 
 def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice, identifier_selector, timepoint_selector, data_selector, distance_filter):
     dff=pd.read_json(shared_data, orient='split')
-    graph_options={'None':print(), 'lineplot':GD.lineplot, 'migration_distance':GD.migration_distance}
+    graph_options={'None':print(), 'lineplot':GD.lineplot, 'migration_distance':GD.migration_distance, 'time_series':GD.time_series}
     return graph_options[graph_selector](dat=dff, classifier_column=classifier_choice, 
                         identifier_column=identifier_selector,
                         timepoint_column=timepoint_selector, data_column=data_selector, distance_filter=distance_filter, testmode=False)
