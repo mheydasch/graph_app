@@ -39,7 +39,7 @@ In it's current version the app is only optimized for data representing cell mig
 The software is currently optimized for the unique id having the following format:
 W{}_S{}_E{}.format(wellname, FoV name, TrackID). 
 This is relevant for finding the associated images.
-To make changes to this format edit the function update_image_overlay() in the file app_launcher.py.
+To make changes to this format edit the key pattern variable in the function update_images() in the file app_launcher.py.
 
 Your filename needs to contain the unique ID to be associated to the data.
 
