@@ -271,10 +271,10 @@ def update_images(n_clicks, folder):
                 #join image and full path
                 img_path=os.path.join(root, img)
                 #open and encode the image with base64 encoding
-                #encode=base64.b64encode(open(img_path, 'rb').read())
+                #encoded=base64.b64encode(open(img_path, 'rb').read())
                 #update the dictionary
                 img_key=re.search(key_pattern, img).group()
-                #image_dict.update({img:encode})     
+                #image_dict.update({img_key:encoded})     
                 image_dict.update({img_key:img_path})
                 #i_dirs.append(os.path.join(root, img)) 
                 
