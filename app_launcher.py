@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Jul  1 13:11:11 2019
-
 @author: max
 """
 
@@ -42,13 +41,10 @@ app.title='Visualisation_of_Data'
 '''
 Holds interface and callback definitions for the app. This is the script that
 launches it
-
 Dependencies:
 menus and buttons are defined in the file menu_definitions.py
 graphs are defined in the file graph_definitions.py
 other functions for calculations on data are defined in algorythm_definitions.py
-
-
 '''
 
 
@@ -108,6 +104,8 @@ app.layout = html.Div([
     html.Div(id='track_length_output', style={'margin-top': 20} ),
     html.P('Select the minimum travelled distance'),
     MD.distance_filter(),
+    html.P('Do you want to reuse a previously created instance of the graph?'),
+    MD.graph_reuse(),
     MD.plot_button(),
 
 #tabs section start
@@ -163,7 +161,10 @@ app.layout = html.Div([
     #holding the type of the uploaded images
     html.Div(id='image_type', style={'display':'none'}),
     #holding the uploaded images
-    html.Div(id='image_list', style={'display':'none'})
+    html.Div(id='image_list', style={'display':'none'}),
+    #holds graphs after they have been created for faster access
+    html.Div(id='graph_storage', style={'display':'none'}),
+    html.Div(id='encoded_img_storage', style={'display':'none'})
 ])
     
 
@@ -386,7 +387,8 @@ def display_value(track_length_selector,  identifier_selector, timepoint_selecto
 #also takes the states of the dropdown menus: classifier_choice, identifier_selector
 #and timepoint_selector and feeds it as options to the graph.
 #it takes the data from the hidden div 'shared_data' as input data for the graph
-@app.callback(Output('migration_data', 'figure'),
+@app.callback([Output('migration_data', 'figure'),
+               Output('graph_storage', 'children')],
               [Input('plot_button', 'n_clicks')],
               [State('graph_selector', 'value'),
                State('shared_data', 'children'),
@@ -394,14 +396,29 @@ def display_value(track_length_selector,  identifier_selector, timepoint_selecto
                State('identifier_selector', 'value'),
                State('timepoint_selector', 'value'),
                State('data_selector', 'value'),
-               State('distance_filter', 'value')])
+               State('distance_filter', 'value'),
+               State('graph_storage', 'children'),
+               State('graph_reuse', 'value')])
 
-def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice, identifier_selector, timepoint_selector, data_selector, distance_filter):
+def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice, identifier_selector, timepoint_selector, data_selector, distance_filter, graph_storage, graph_reuse):
+    #if the graph storage is empty an empty dictionary will be created
+    if graph_storage==None or graph_reuse=='no':
+        graph_storage={}
+    #data is read from the shared data div
     dff=pd.read_json(shared_data, orient='split')
-    graph_options={'None':print(), 'lineplot':GD.lineplot, 'migration_distance':GD.migration_distance, 'time_series':GD.time_series}
-    return graph_options[graph_selector](dat=dff, classifier_column=classifier_choice, 
-                        identifier_column=identifier_selector,
-                        timepoint_column=timepoint_selector, data_column=data_selector, distance_filter=distance_filter, testmode=False)
+    #if the current graph option is already stored in the graph storage, 
+    #the stored graph will be displayed
+    if graph_selector in graph_storage.keys():
+        return graph_storage[graph_selector], graph_storage
+    #oherwise the graph will be picked from the graph options dictionary, the figure will be created,
+    #the graph_storage dictionary will be updated and the figure and updated dictionary will be returned
+    else:
+        graph_options={'lineplot':GD.lineplot, 'migration_distance':GD.migration_distance, 'time_series':GD.time_series}
+        fig=graph_options[graph_selector](dat=dff, classifier_column=classifier_choice, 
+                            identifier_column=identifier_selector,
+                            timepoint_column=timepoint_selector, data_column=data_selector, distance_filter=distance_filter, testmode=False)
+        graph_storage.update({graph_selector:fig})
+        return fig, graph_storage
 
 #%% Display image overlay
 @app.callback(Output('image-overlay', 'src'),

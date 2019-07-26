@@ -46,6 +46,13 @@ def RadioItems():
          {'label':'time_series', 'value':'time_series'}],
     value='lineplot',
     id='graph_selector')
+def graph_reuse():
+    return dcc.RadioItems(
+    options=[
+            {'label':'yes', 'value' : 'yes'},
+             {'label':'no', 'value' : 'no'}],
+             value='no',
+             id='graph_reuse')
 #table layout
 def generate_table(df):
     '''
@@ -132,6 +139,7 @@ def data_selector(df):
             options=data_options,
             multi=True,
             value=['Location_Center_X_Zeroed', 'Location_Center_Y_Zeroed'])
+
 #%% images
 def Image_folder():
     return dcc.Textarea(

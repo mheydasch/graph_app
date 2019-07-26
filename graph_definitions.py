@@ -118,6 +118,8 @@ def migration_distance(dat=[], classifier_column='', identifier_column='', timep
         name=i,
         boxpoints='all'), 
         row=2, col=1)
+    fig.update_layout(margin={'l': 40, 'b': 5, 't': 30, 'r': 200},
+            height=750, width=750)
 
     return fig
     
