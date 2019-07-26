@@ -9,6 +9,7 @@ Created on Mon Jul  1 13:11:11 2019
 import base64
 import datetime
 import io
+import time
 import numpy as np
 from PIL import Image
 
@@ -401,6 +402,7 @@ def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice, identif
                State('image_type', 'children'),
                State('Image_selector', 'value')])
 def update_image_overlay(hoverData, image_dict, image_type, image_selector):
+    start_time=time.time()
     #exclusion=re.compile('_E.+?(?=\.)')
     print(image_type)
     #removing discrepancies between hover text and filenames
@@ -417,8 +419,9 @@ def update_image_overlay(hoverData, image_dict, image_type, image_selector):
             #base 64 encode the image
             encoded=base64.b64encode(open(image, 'rb').read())
             #return the encoded image
+            print("--- %s seconds ---" % (time.time() - start_time))
             return 'data:image/png;base64,{}'.format(encoded.decode())
-            #break out of the loop once the first image is found
+            #break out of the loop once the first image is found 
             break
 
 

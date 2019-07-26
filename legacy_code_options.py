@@ -5,7 +5,16 @@ Created on Thu Jul 25 16:22:28 2019
 
 @author: max
 """
-
+import plotly.plotly as py
+import plotly.graph_objs as go
+from plotly import tools
+import os
+import sys
+import math
+import numpy as np
+sys.path.append(os.path.realpath(__file__))
+import algorythm_definitions as AD
+#plotly 3.7.1
 
 #%% legacy plots
 #lineplot with two columns instead of one
