@@ -13,6 +13,7 @@ import time
 import numpy as np
 from PIL import Image
 
+
 import dash
 from dash.dependencies import Input, Output, State
 import dash_core_components as dcc
@@ -28,6 +29,7 @@ import re
 sys.path.append(os.path.realpath(__file__))
 import graph_definitions as GD
 import menu_definitions as MD
+import algorythm_definitions as AD
 
 
 
@@ -248,11 +250,12 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
               [Input('Folder_submit', 'n_clicks')],
               [State('Image_folder', 'value'),])
 #calls the upload function, updating the global variable df and also storing 
-def update(n_clicks, folder):
+def update_images(n_clicks, folder):
     find_dir='overlays'
     image_dict={}
     print(folder)
     print('uploading...')
+    key_pattern=re.compile('W[A-Z][0-9]_S[0-9]+_T[0-9]+')
     for root, dirs, files in os.walk(folder):
         #print(dirs)
     #looks in each folder from given path
@@ -263,15 +266,20 @@ def update(n_clicks, folder):
             #finds the csv files in the folder and adds them to a list
             image_files=[x for x in files]
             for img in image_files:
+                #print(img)
+                #print(type(img))
                 #join image and full path
                 img_path=os.path.join(root, img)
                 #open and encode the image with base64 encoding
                 #encode=base64.b64encode(open(img_path, 'rb').read())
                 #update the dictionary
+                img_key=re.search(key_pattern, img).group()
                 #image_dict.update({img:encode})     
-                image_dict.update({img:img_path})
+                image_dict.update({img_key:img_path})
                 #i_dirs.append(os.path.join(root, img)) 
+                
     #print(image_dict)
+    print(AD.take(5, image_dict.items()))
     print('images uploaded')
     return image_dict
 
@@ -403,26 +411,56 @@ def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice, identif
                State('Image_selector', 'value')])
 def update_image_overlay(hoverData, image_dict, image_type, image_selector):
     start_time=time.time()
-    #exclusion=re.compile('_E.+?(?=\.)')
-    print(image_type)
-    #removing discrepancies between hover text and filenames
-    exclusion=re.compile('_E+.*')
-    ID=hoverData['points'][0]['hovertext'].replace(re.search(exclusion, hoverData['points'][0]['hovertext']).group(),'')
+
+    #exclusion criterium if timepoint is already there
+    exclusion=re.compile('_E.+?(?=\_)')
+    #print(image_type)
+    
+    #exclusion criterium if timepoint isnot in hovertext
+    exclusion_nt=re.compile('_E+.*')
+    #getting hovertext from hoverdata and removing discrepancies between hover text and filenames
+    try:
+        ID=hoverData['points'][0]['hovertext'].replace(re.search(exclusion, hoverData['points'][0]['hovertext']).group(),'')
+    except AttributeError:
+        ID=hoverData['points'][0]['hovertext'].replace(re.search(exclusion_nt, hoverData['points'][0]['hovertext']).group(),'')
+        ID=ID+'_T1'
+    #if re.search('_T[0-9]+', ID)==None:
+        
+    print(ID)
     #searching the dictionary for keys fitting the hovertext
-    for k in image_dict.keys():
-        if re.search(ID, k) !=None:           
-            #image_name=k.replace(re.search(exclusion, k).group(), '')
-            print(k)
-            print(ID)
-            #getting the image from the dictionary by using it's name as the key
-            image=image_dict[k]
-            #base 64 encode the image
-            encoded=base64.b64encode(open(image, 'rb').read())
-            #return the encoded image
-            print("--- %s seconds ---" % (time.time() - start_time))
-            return 'data:image/png;base64,{}'.format(encoded.decode())
-            #break out of the loop once the first image is found 
-            break
+ 
+   
+    image=image_dict[ID]
+    if type(image)==bytes:
+        print("--- %s seconds ---" % (time.time() - start_time))
+        print(type(image))
+        return 'data:image/png;base64,{}'.format(image.decode()) 
+    if type(image)==str: 
+        #base64 encode the image
+        encoded=base64.b64encode(open(image, 'rb').read())
+        #update the dictionary with the encoded image
+        image_dict.update({ID:encoded})
+        print(type(image))
+        #return the encoded image
+        print("--- %s seconds ---" % (time.time() - start_time))
+        return 'data:image/png;base64,{}'.format(encoded.decode())    
+    
+    
+# =============================================================================
+#         if re.search(ID, k) !=None:           
+#             #image_name=k.replace(re.search(exclusion, k).group(), '')
+#             print(k)
+#             print(ID)
+#             #getting the image from the dictionary by using it's name as the key
+#             image=image_dict[k]
+#             #base 64 encode the image
+#             encoded=base64.b64encode(open(image, 'rb').read())
+#             #return the encoded image
+#             print("--- %s seconds ---" % (time.time() - start_time))
+#             return 'data:image/png;base64,{}'.format(encoded.decode())
+#             #break out of the loop once the first image is found 
+#             break
+# =============================================================================
 
 
 

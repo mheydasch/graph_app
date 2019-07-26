@@ -42,9 +42,8 @@ def RadioItems():
     return dcc.RadioItems(
     options=[
         {'label': 'lineplot', 'value': 'lineplot'},
-        {'label': 'None', 'value' : 'None'},
          {'label':'migration_distance', 'value': 'migration_distance'},],
-    value='None',
+    value='lineplot',
     id='graph_selector')
 #table layout
 def generate_table(df):
@@ -108,14 +107,14 @@ def track_length_selector():
             #for the future add a timepoint column selector for dynamic max lenght
             max=10,
             step=1,
-            value=0,
+            value=7,
             marks={0:'0',
                    5:'5',
                    10:'10'})
 def distance_filter():
     return dcc.Input(placeholder='Enter a value...',
                      type='number',
-                     value=0,
+                     value=10,
                      id='distance_filter')
 def datatype_selector():
     return dcc.RadioItems(options=[

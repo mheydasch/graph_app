@@ -27,7 +27,7 @@ def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_colum
     print(identifier_column)
     print(type(identifier_column))
     #cells=list(dat[identifier_column].unique())
-    
+    dat['unique_time']=dat[identifier_column]+'_T'+dat[timepoint_column].astype('str')
 
     classes=list(dat[classifier_column].unique())
     X_column=data_column[0]
@@ -65,7 +65,7 @@ def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_colum
             #getting y values
             y=dat_class.loc[dat_class[identifier_column]==c][Y_column],
             #getting unique ID
-            hovertext=dat_class.loc[dat_class[identifier_column]==c][identifier_column]),
+            hovertext=dat_class.loc[dat_class[identifier_column]==c]['unique_time']),
 
             row=int(rowlist[math.floor(r_i)]) , col=1)
     

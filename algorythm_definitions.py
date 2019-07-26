@@ -10,7 +10,11 @@ cHolds definitions for several calculations
 import pandas as pd
 #import re
 import numpy as np
+from itertools import islice
 #%%
+def take(n, iterable):
+    "Return first n items of the iterable as a list"
+    return list(islice(iterable, n))
 def calc_dist(dat=[], classifier_column='Classifier', identifier_column='unique_id', timepoint_column='Metadata_Timepoint', data_column=['Location_Center_X_Zeroed','Location_Center_Y_Zeroed']):
     l=[]
     cells=list(dat[identifier_column].unique())
