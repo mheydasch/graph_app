@@ -51,7 +51,7 @@ def graph_reuse():
     options=[
             {'label':'yes', 'value' : 'yes'},
              {'label':'no', 'value' : 'no'}],
-             value='no',
+             value='yes',
              id='graph_reuse')
 #table layout
 def generate_table(df):

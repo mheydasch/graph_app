@@ -10,6 +10,7 @@ Holds the graph definitions for the app.
 
 
 #import plotly.chart_studio as py
+import chart_studio.plotly
 import plotly.graph_objects as go
 from plotly import tools
 from plotly.subplots import make_subplots
@@ -96,7 +97,7 @@ def migration_distance(dat=[], classifier_column='', identifier_column='', timep
     distances=distances[distances['cumulative_distance']>distance_filter]
     print('...done calculating')
     classes=list(distances[classifier_column].unique())
-    fig=tools.make_subplots(rows=2, cols=1, subplot_titles=['Cumulative distance','Persistence'])
+    fig=make_subplots(rows=2, cols=1, subplot_titles=['Cumulative distance','Persistence'])
 
     for xpos, i in enumerate(classes):
         fig.append_trace(trace=go.Box(

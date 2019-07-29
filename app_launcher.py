@@ -17,6 +17,7 @@ import dash
 from dash.dependencies import Input, Output, State
 import dash_core_components as dcc
 import dash_html_components as html
+import imageio
 #from flask_caching import Cache
 
 import pandas as pd
@@ -77,7 +78,7 @@ app.layout = html.Div([
     },
     # Allow multiple files to be uploaded
     multiple=True), 
-    html.P('Upload the images associated to your data:'),
+    html.P('Upload a single image for troubleshooting'),
     MD.Upload_images(),
     MD.Image_folder(),
     MD.Folder_submit(),
@@ -85,28 +86,30 @@ app.layout = html.Div([
     MD.Image_selector(),
     #calling menus
     html.Hr(),
-    dcc.Markdown('''**Data organization**'''),
-    html.P('How is your data formatted?'),
-    MD.datatype_selector(),
-    html.P('Select the columns that hold your data, if x,y coordinates, first selected is treated as x coordinate:'),
-    MD.data_selector(df),
-    html.P('Select the column which holds the classifier of your groups:'),
-    MD.classifier_choice(df),
-    html.P('Select the column which holds the identifier for each unique item:'),
-    MD.identifier_selector(df),
-    html.P('Select the column which holds the timepoints:'),
-    MD.timepoint_selector(df),  
-    html.Hr(),
-    dcc.Markdown('''**Data filtering**'''), 
-    MD.RadioItems(),
-    html.P('Select the minimum track length'),
-    MD.track_length_selector(),
-    html.Div(id='track_length_output', style={'margin-top': 20} ),
-    html.P('Select the minimum travelled distance'),
-    MD.distance_filter(),
-    html.P('Do you want to reuse a previously created instance of the graph?'),
-    MD.graph_reuse(),
-    MD.plot_button(),
+    html.Div(
+        [html.Div([dcc.Markdown('''**Data organization**'''),
+        html.P('How is your data formatted?'),
+        MD.datatype_selector(),
+        html.P('Select the columns that hold your data, if x,y coordinates, first selected is treated as x coordinate:'),
+        MD.data_selector(df),
+        html.P('Select the column which holds the classifier of your groups:'),
+        MD.classifier_choice(df),
+        html.P('Select the column which holds the identifier for each unique item:'),
+        MD.identifier_selector(df),
+        html.P('Select the column which holds the timepoints:'),
+        MD.timepoint_selector(df)], className= 'six columns'),
+    
+        html.Div([dcc.Markdown('''**Data filtering**'''), 
+        MD.RadioItems(),
+        html.P('Select the minimum track length'),
+        MD.track_length_selector(),
+        html.Div(id='track_length_output', style={'margin-top': 20} ),
+        html.P('Select the minimum travelled distance'),
+        MD.distance_filter(),
+        html.P('Do you want to reuse a previously created instance of the graph, if available?'),
+        MD.graph_reuse(),
+        MD.plot_button()], className='six columns'
+    )], className='row'),
 
 #tabs section start
     dcc.Tabs(id='tabs', children=[
@@ -388,7 +391,7 @@ def display_value(track_length_selector,  identifier_selector, timepoint_selecto
 #and timepoint_selector and feeds it as options to the graph.
 #it takes the data from the hidden div 'shared_data' as input data for the graph
 @app.callback([Output('migration_data', 'figure'),
-               Output('graph_storage', 'children')],
+               Output('graph_storage', 'component')],
               [Input('plot_button', 'n_clicks')],
               [State('graph_selector', 'value'),
                State('shared_data', 'children'),
@@ -397,7 +400,7 @@ def display_value(track_length_selector,  identifier_selector, timepoint_selecto
                State('timepoint_selector', 'value'),
                State('data_selector', 'value'),
                State('distance_filter', 'value'),
-               State('graph_storage', 'children'),
+               State('graph_storage', 'component'),
                State('graph_reuse', 'value')])
 
 def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice, identifier_selector, timepoint_selector, data_selector, distance_filter, graph_storage, graph_reuse):
@@ -420,14 +423,16 @@ def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice, identif
         graph_storage.update({graph_selector:fig})
         return fig, graph_storage
 
-#%% Display image overlay
+#%%
 @app.callback(Output('image-overlay', 'src'),
               [Input('migration_data', 'hoverData')],
               [State('image_list','component'),
                State('image_type', 'children'),
-               State('Image_selector', 'value')])
-def update_image_overlay(hoverData, image_dict, image_type, image_selector):
-    start_time=time.time()
+               State('Image_selector', 'value'),
+               State('shared_data', 'children')])
+def update_image_overlay(hoverData, image_dict, image_type, image_selector, shared_data):
+    #start_time=time.time()
+    data=pd.read_json(shared_data, orient='split')
 
     #exclusion criterium if timepoint is already there
     exclusion=re.compile('_E.+?(?=\_)')
@@ -436,31 +441,130 @@ def update_image_overlay(hoverData, image_dict, image_type, image_selector):
     #exclusion criterium if timepoint isnot in hovertext
     exclusion_nt=re.compile('_E+.*')
     #getting hovertext from hoverdata and removing discrepancies between hover text and filenames
+    #(stripping of track_ID)
     try:
-        ID=hoverData['points'][0]['hovertext'].replace(re.search(exclusion, hoverData['points'][0]['hovertext']).group(),'')
+        ID_or=hoverData['points'][0]['hovertext']
+        ID=ID_or.replace(re.search(exclusion, ID_or).group(),'')
+        print(ID_or)
     except AttributeError:
         ID=hoverData['points'][0]['hovertext'].replace(re.search(exclusion_nt, hoverData['points'][0]['hovertext']).group(),'')
         ID=ID+'_T1'
-    #if re.search('_T[0-9]+', ID)==None:
-        
-    print(ID)
-    #searching the dictionary for keys fitting the hovertext
- 
-   
+    #searching the dictionary for keys fitting the hovertext   
     image=image_dict[ID]
-    if type(image)==bytes:
-        print("--- %s seconds ---" % (time.time() - start_time))
-        print(type(image))
-        return 'data:image/png;base64,{}'.format(image.decode()) 
-    if type(image)==str: 
-        #base64 encode the image
-        encoded=base64.b64encode(open(image, 'rb').read())
-        #update the dictionary with the encoded image
-        image_dict.update({ID:encoded})
-        print(type(image))
-        #return the encoded image
-        print("--- %s seconds ---" % (time.time() - start_time))
-        return 'data:image/png;base64,{}'.format(encoded.decode())    
+    #base64 encode the image   
+    
+    #testcode
+    #reading the image as np array
+    img=imageio.imread(image)
+    #getting x and y coordinates from the data table, using the original ID,
+    #which includes the track ID of the cell
+    x_coord=int(data[data['unique_time']==ID_or]['Location_Center_X'].values)
+    y_coord=int(data[data['unique_time']==ID_or]['Location_Center_Y'].values)
+    #manipulating a range of pixels around the center into being green
+    img[x_coord-5:x_coord+5, y_coord-5:y_coord+5]=[0, 255, 0]
+    #base64 encoding the image
+    temp=Image.fromarray(img)
+    temp.save('temp.png')
+    #encoded=base64.b64encode(open('temp.png', 'rb').read())
+    with open('temp.png', 'rb') as f:
+        encoded=base64.b64encode(f.read())
+    #encoded=base64.b64encode(img)
+    print('encoding complete')
+    
+    #update the dictionary with the encoded image
+    #image_dict.update({ID:encoded})
+    #print(type(image))
+    #return the encoded image
+    #print("--- %s seconds ---" % (time.time() - start_time))
+    return 'data:image/png;base64,{}'.format(encoded.decode()) 
+    
+
+#%% Display image overlay, revert to this option until image manipulation is stable
+# =============================================================================
+# @app.callback(Output('image-overlay', 'src'),
+#               [Input('migration_data', 'hoverData')],
+#               [State('image_list','component'),
+#                State('image_type', 'children'),
+#                State('Image_selector', 'value'),])
+# def update_image_overlay(hoverData, image_dict, image_type, image_selector):
+#     start_time=time.time()
+# 
+#     #exclusion criterium if timepoint is already there
+#     exclusion=re.compile('_E.+?(?=\_)')
+#     #print(image_type)
+#     
+#     #exclusion criterium if timepoint isnot in hovertext
+#     exclusion_nt=re.compile('_E+.*')
+#     #getting hovertext from hoverdata and removing discrepancies between hover text and filenames
+#     try:
+#         ID=hoverData['points'][0]['hovertext'].replace(re.search(exclusion, hoverData['points'][0]['hovertext']).group(),'')
+#     except AttributeError:
+#         ID=hoverData['points'][0]['hovertext'].replace(re.search(exclusion_nt, hoverData['points'][0]['hovertext']).group(),'')
+#         ID=ID+'_T1'
+#     #if re.search('_T[0-9]+', ID)==None:
+#         
+#     print(ID)
+#     #searching the dictionary for keys fitting the hovertext
+#  
+#    
+#     image=image_dict[ID]
+#     #base64 encode the image
+#     with open(image, 'rb') as f:
+#         encoded=base64.b64encode(f.read())
+#     #update the dictionary with the encoded image
+#     image_dict.update({ID:encoded})
+#     print(type(image))
+#     #return the encoded image
+#     print("--- %s seconds ---" % (time.time() - start_time))
+#     return 'data:image/png;base64,{}'.format(encoded.decode())  
+# =============================================================================
+
+  
+#%%    
+    
+    #update the dictionary with the encoded image
+    #image_dict.update({ID:encoded})
+    #print(type(image))
+    #return the encoded image
+    #print("--- %s seconds ---" % (time.time() - start_time))
+    #return 'data:image/png;base64,{}'.format(encoded.decode())  
+       
+# =============================================================================
+#         
+#         if encoded_images==None:
+#         encoded_images={}
+# 
+#     if ID in encoded_images.keys():
+#         print("--- %s seconds ---" % (time.time() - start_time))
+#         encoded=encoded_images[ID][0]
+#         return 'data:image/png;base64,{}'.format(encoded.decode()), encoded_images
+#     else:
+#         image=image_dict[ID]
+#         #base64 encode the image
+#         encoded=base64.b64encode(open(image, 'rb').read())
+#         #update the dictionary with the encoded image
+#         encoded_images.update({ID:[encoded]})
+#         print(type(image))
+#         #return the encoded image
+#         print("--- %s seconds ---" % (time.time() - start_time))
+#         return 'data:image/png;base64,{}'.format(encoded.decode()), encoded_images 
+# =============================================================================
+    
+# =============================================================================
+#     if type(image)==bytes:
+#         print("--- %s seconds ---" % (time.time() - start_time))
+#         print(type(image))
+#         return 'data:image/png;base64,{}'.format(image.decode()) 
+#     if type(image)==str: 
+#         #base64 encode the image
+#         encoded=base64.b64encode(open(image, 'rb').read())
+#         #update the dictionary with the encoded image
+#         image_dict.update({ID:encoded})
+#         print(type(image))
+#         #return the encoded image
+#         print("--- %s seconds ---" % (time.time() - start_time))
+#         return 'data:image/png;base64,{}'.format(encoded.decode())    
+# =============================================================================
     
     
 # =============================================================================
