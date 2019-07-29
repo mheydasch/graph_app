@@ -461,7 +461,7 @@ def update_image_overlay(hoverData, image_dict, image_type, image_selector, shar
     x_coord=int(data[data['unique_time']==ID_or]['Location_Center_X'].values)
     y_coord=int(data[data['unique_time']==ID_or]['Location_Center_Y'].values)
     #manipulating a range of pixels around the center into being green
-    img[x_coord-5:x_coord+5, y_coord-5:y_coord+5]=[0, 255, 0]
+    img[y_coord-5:y_coord+5, x_coord-5:x_coord+5]=[0, 255, 0]
     #base64 encoding the image
     temp=Image.fromarray(img)
     temp.save('temp.png')
