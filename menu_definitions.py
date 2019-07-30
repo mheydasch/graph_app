@@ -112,7 +112,6 @@ def track_length_selector():
     return dcc.Slider(
             id='track_length_selector',
             min=0,
-            #for the future add a timepoint column selector for dynamic max lenght
             max=10,
             step=1,
             value=7,

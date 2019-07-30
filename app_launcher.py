@@ -404,6 +404,7 @@ def display_value(track_length_selector,  identifier_selector, timepoint_selecto
                State('graph_reuse', 'value')])
 
 def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice, identifier_selector, timepoint_selector, data_selector, distance_filter, graph_storage, graph_reuse):
+    print('classifier_choice')
     #if the graph storage is empty an empty dictionary will be created
     if graph_storage==None or graph_reuse=='no':
         graph_storage={}
@@ -465,7 +466,6 @@ def update_image_overlay(hoverData, image_dict, image_type, image_selector, shar
     #base64 encoding the image
     temp=Image.fromarray(img)
     temp.save('temp.png')
-    #encoded=base64.b64encode(open('temp.png', 'rb').read())
     with open('temp.png', 'rb') as f:
         encoded=base64.b64encode(f.read())
     #encoded=base64.b64encode(img)

@@ -96,13 +96,13 @@ def migration_distance(dat=[], classifier_column='', identifier_column='', timep
     #filtering the distances by a minimum cumulative distance
     distances=distances[distances['cumulative_distance']>distance_filter]
     print('...done calculating')
-    classes=list(distances[classifier_column].unique())
+    classes=list(distances['Classifier'].unique())
     fig=make_subplots(rows=2, cols=1, subplot_titles=['Cumulative distance','Persistence'])
 
     for xpos, i in enumerate(classes):
         fig.append_trace(trace=go.Box(
-        y=distances.loc[distances[classifier_column]==i]['cumulative_distance'],
-        hovertext=distances.loc[distances[classifier_column]==i][identifier_column],
+        y=distances.loc[distances['Classifier']==i]['cumulative_distance'],
+        hovertext=distances.loc[distances['Classifier']==i][identifier_column],
 
         #x=[xpos],
         name=i,
@@ -112,8 +112,8 @@ def migration_distance(dat=[], classifier_column='', identifier_column='', timep
 
     for xpos, i in enumerate(classes):
         fig.append_trace(trace=go.Box(
-        y=distances.loc[distances[classifier_column]==i]['persistence'],
-        hovertext=distances.loc[distances[classifier_column]==i][identifier_column],
+        y=distances.loc[distances['Classifier']==i]['persistence'],
+        hovertext=distances.loc[distances['Classifier']==i][identifier_column],
 
         #x=[xpos],
         name=i,
