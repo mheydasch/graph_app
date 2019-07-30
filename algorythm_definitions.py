@@ -40,7 +40,7 @@ def calc_dist(dat=[], classifier_column='Classifier', identifier_column='unique_
         net_distance=np.sqrt((single_track[X_column].iloc[-1]-
                                 single_track[Y_column].iloc[0])**2)
         #adding the calculated values to a dictionary
-        temp={'unique_id':n, 'cumulative_distance':cumulative_distance, 'net_distance':net_distance, 'Classifier':single_track.loc[0][classifier_column]}
+        temp={'unique_id':n, 'cumulative_distance':cumulative_distance, 'net_distance':net_distance, 'Classifier':single_track.loc[0][classifier_column], 'unique_time':single_track.loc[0]['unique_time']}
         #appending the dictionary to a list to keep it over the loops
         l.append(temp)
     

@@ -45,7 +45,11 @@ def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_colum
         #defining subplot layout
     fig=make_subplots(rows=row_n, cols=1, subplot_titles=classes)
     r_i=0
-
+    #getting max axis values
+    max_x=dat[X_column].max()
+    min_x=dat[X_column].min()
+    max_y=dat[Y_column].max()
+    min_y=dat[Y_column].min()
     #looping through the clases
     for i in classes:
         #subsetting the data by the class
@@ -70,16 +74,18 @@ def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_colum
             hovertext=dat_class.loc[dat_class[identifier_column]==c]['unique_time']),
 
             row=int(rowlist[math.floor(r_i)]) , col=1)
-    
+
 
 
             
         #adding 0.5 to the row indicator, so that every second class will be 
         #plottet in a new row
+        fig.update_yaxes(range=[min_y*1.05, max_y*1.05], row=int(rowlist[math.floor(r_i)]), col=1)
+        fig.update_xaxes(range=[min_x*1.05, max_x*1.05], row=int(rowlist[math.floor(r_i)]), col=1)
         r_i+=1
 
-    fig.update_layout(margin={'l': 40, 'b': 5, 't': 30, 'r': 200},
-            height=750, width=750)
+    fig.update_layout(margin={'l': 40, 'b': 5, 't': 30, 'r': 40},
+            height=row_n*375, width=750)
   
 
     print('...done')
@@ -102,7 +108,7 @@ def migration_distance(dat=[], classifier_column='', identifier_column='', timep
     for xpos, i in enumerate(classes):
         fig.append_trace(trace=go.Box(
         y=distances.loc[distances['Classifier']==i]['cumulative_distance'],
-        hovertext=distances.loc[distances['Classifier']==i][identifier_column],
+        hovertext=distances.loc[distances['Classifier']==i]['unique_time'],
 
         #x=[xpos],
         name=i,
@@ -113,7 +119,7 @@ def migration_distance(dat=[], classifier_column='', identifier_column='', timep
     for xpos, i in enumerate(classes):
         fig.append_trace(trace=go.Box(
         y=distances.loc[distances['Classifier']==i]['persistence'],
-        hovertext=distances.loc[distances['Classifier']==i][identifier_column],
+        hovertext=distances.loc[distances['Classifier']==i]['unique_time'],
 
         #x=[xpos],
         name=i,
@@ -138,6 +144,10 @@ def time_series(dat=[], classifier_column='', identifier_column='', timepoint_co
     classes=list(dat[classifier_column].unique())
     Y_column=data_column[0]
     X_column=timepoint_column
+    max_x=dat[X_column].max()
+    min_x=dat[X_column].min()
+    max_y=dat[Y_column].max()
+    min_y=dat[Y_column].min()
     #initiating traces as a list
     #getting trace IDs from unique IDs (cells)
     print('looping through cells...')
@@ -177,13 +187,14 @@ def time_series(dat=[], classifier_column='', identifier_column='', timepoint_co
     
 
 
-            
+        fig.update_yaxes(range=[min_y*1.05, max_y*1.05], row=int(rowlist[math.floor(r_i)]), col=1)
+        fig.update_xaxes(range=[min_x*1.05, max_x*1.05], row=int(rowlist[math.floor(r_i)]), col=1)    
         #adding 0.5 to the row indicator, so that every second class will be 
         #plottet in a new row
         r_i+=1
 
-    fig.update_layout(margin={'l': 40, 'b': 5, 't': 30, 'r': 200},
-            height=750, width=750)
+    fig.update_layout(margin={'l': 40, 'b': 5, 't': 30, 'r': 40},
+            height=row_n*375, width=750)
   
 
     print('...done')

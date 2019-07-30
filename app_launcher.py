@@ -120,7 +120,9 @@ app.layout = html.Div([
                      #calling the graph 
                      children= [html.Div([
                                      
-                                     html.Div([dcc.Graph(id='migration_data')],
+                                     html.Div([dcc.Graph(id='migration_data'),
+                                               #MD.save_button()
+                                               ],
                                           className= 'six columns'),
                                      html.Div([html.Img(id='image-overlay',
                                                         style={
@@ -404,7 +406,6 @@ def display_value(track_length_selector,  identifier_selector, timepoint_selecto
                State('graph_reuse', 'value')])
 
 def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice, identifier_selector, timepoint_selector, data_selector, distance_filter, graph_storage, graph_reuse):
-    print('classifier_choice')
     #if the graph storage is empty an empty dictionary will be created
     if graph_storage==None or graph_reuse=='no':
         graph_storage={}
@@ -446,10 +447,11 @@ def update_image_overlay(hoverData, image_dict, image_type, image_selector, shar
     try:
         ID_or=hoverData['points'][0]['hovertext']
         ID=ID_or.replace(re.search(exclusion, ID_or).group(),'')
-        print(ID_or)
+        print('ID_or: ', ID_or)
     except AttributeError:
         ID=hoverData['points'][0]['hovertext'].replace(re.search(exclusion_nt, hoverData['points'][0]['hovertext']).group(),'')
         ID=ID+'_T1'
+        print('ID: ',ID)
     #searching the dictionary for keys fitting the hovertext   
     image=image_dict[ID]
     #base64 encode the image   

@@ -139,6 +139,9 @@ def data_selector(df):
             multi=True,
             value=['Location_Center_X_Zeroed', 'Location_Center_Y_Zeroed'])
 
+def save_button():
+    return html.Button(id='save_graphs', n_clicks=0, children='save graphs')
+
 #%% images
 def Image_folder():
     return dcc.Textarea(
