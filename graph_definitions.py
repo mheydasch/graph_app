@@ -102,7 +102,7 @@ def migration_distance(dat=[], classifier_column='', identifier_column='', timep
     #filtering the distances by a minimum cumulative distance
     distances=distances[distances['cumulative_distance']>distance_filter]
     print('...done calculating')
-    classes=list(distances['Classifier'].unique())
+    classes=list(distances['Classifier'].astype('str').unique())
     fig=make_subplots(rows=2, cols=1, subplot_titles=['Cumulative distance','Persistence'])
 
     for xpos, i in enumerate(classes):
@@ -141,7 +141,7 @@ def time_series(dat=[], classifier_column='', identifier_column='', timepoint_co
     #cells=list(dat[identifier_column].unique())
     dat['unique_time']=dat[identifier_column]+'_T'+dat[timepoint_column].astype('str')
 
-    classes=list(dat[classifier_column].unique())
+    classes=list(dat[classifier_column].asstr.unique())
     Y_column=data_column[0]
     X_column=timepoint_column
     max_x=dat[X_column].max()

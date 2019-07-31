@@ -178,3 +178,13 @@ def Image_selector():
         {'label': 'No', 'value' : 'No'}], 
         value='No', 
         id='Image_selector')
+#%% track filtering
+def track_comment():
+    return dcc.Textarea(
+            placeholder='Do you want to flag the track',
+            value='enter a comment to the track',
+            style={'width':'100%'},
+            id='track_comment',
+            )
+def comment_submit():
+    return html.Button(id='comment_submit', n_clicks=0, children='Add Comment')    

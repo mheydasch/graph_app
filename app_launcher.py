@@ -18,6 +18,7 @@ from dash.dependencies import Input, Output, State
 import dash_core_components as dcc
 import dash_html_components as html
 import imageio
+import json
 #from flask_caching import Cache
 
 import pandas as pd
@@ -111,6 +112,7 @@ app.layout = html.Div([
         MD.plot_button()], className='six columns'
     )], className='row'),
 
+
 #tabs section start
     dcc.Tabs(id='tabs', children=[
              dcc.Tab(label='Table', 
@@ -128,7 +130,7 @@ app.layout = html.Div([
                                                         style={
                                                             'height': '75%',
                                                             'width': '75%',
-                                                            'float': 'right',
+                                                            'float': 'fixed',
                                                             'position': 'relative',
                                                             'margin-top': 20,
                                                             'margin-right': 20
@@ -137,14 +139,32 @@ app.layout = html.Div([
                                                         style={
                                                             'height': '75%',
                                                             'width': '75%',
-                                                            'float': 'right',
+                                                            'float': 'fixed',
                                                             'position': 'relative',
                                                             'margin-top': 20,
-                                                            'margin-right': 20
+                                                            'margin-right': 20,
+                                                            
                                                                 }
                                                         
-                                                        )],
-                                          className='six columns'),
+                                                        ),
+                                               html.Div(id='image_name',
+                                                        ),
+                                               html.Div([
+                                                    dcc.Markdown(("""
+                                                        **Click Data**
+                                        
+                                                        Click on points in the graph.
+                                                    """)),
+                                                    html.Pre(id='click-data', style={
+                                                'border': 'thin lightgrey solid',
+                                                'overflowX': 'scroll'
+                                            })]),
+                                                MD.track_comment(),
+                                                MD.comment_submit(),
+                                                html.P('Do you want to flag all, or a single timepoint?'),
+                                                MD.flag_options(),
+                                                  ],className='six columns', )
+                                          
                                                
                                  ], className='row')]
                                  
@@ -153,7 +173,8 @@ app.layout = html.Div([
 #tabs section end    
            
                                  
-        
+
+ 
                              
                     
 
@@ -163,6 +184,7 @@ app.layout = html.Div([
     html.Div(id='output-image-upload', style={'display':'none'}),
      #hidden divs for storing data
     html.Div(id='shared_data', style={'display':'none'}),
+    html.Div(id='shared_data2', style={'display':'none'}),
     #holding the type of the uploaded images
     html.Div(id='image_type', style={'display':'none'}),
     #holding the uploaded images
@@ -421,12 +443,13 @@ def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice, identif
         graph_options={'lineplot':GD.lineplot, 'migration_distance':GD.migration_distance, 'time_series':GD.time_series}
         fig=graph_options[graph_selector](dat=dff, classifier_column=classifier_choice, 
                             identifier_column=identifier_selector,
-                            timepoint_column=timepoint_selector, data_column=data_selector, distance_filter=distance_filter, testmode=False)
+                            timepoint_column=timepoint_selector, data_column=data_selector, distance_filter=distance_filter, testmode=True)
         graph_storage.update({graph_selector:fig})
         return fig, graph_storage
 
 #%%
-@app.callback(Output('image-overlay', 'src'),
+@app.callback([Output('image-overlay', 'src'),
+               Output('image_name', 'children')],
               [Input('migration_data', 'hoverData')],
               [State('image_list','component'),
                State('image_type', 'children'),
@@ -435,28 +458,22 @@ def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice, identif
 def update_image_overlay(hoverData, image_dict, image_type, image_selector, shared_data):
     #start_time=time.time()
     data=pd.read_json(shared_data, orient='split')
-
-    #exclusion criterium if timepoint is already there
-    exclusion=re.compile('_E.+?(?=\_)')
-    #print(image_type)
-    
-    #exclusion criterium if timepoint isnot in hovertext
-    exclusion_nt=re.compile('_E+.*')
     #getting hovertext from hoverdata and removing discrepancies between hover text and filenames
     #(stripping of track_ID)
     try:
+        #exclusion criterium if timepoint is already there
+        exclusion=re.compile('_E.+?(?=\_)')
         ID_or=hoverData['points'][0]['hovertext']
         ID=ID_or.replace(re.search(exclusion, ID_or).group(),'')
         print('ID_or: ', ID_or)
-    except AttributeError:
+    except AttributeError:        
+        #exclusion criterium if timepoint isnot in hovertext
+        exclusion_nt=re.compile('_E+.*')
         ID=hoverData['points'][0]['hovertext'].replace(re.search(exclusion_nt, hoverData['points'][0]['hovertext']).group(),'')
         ID=ID+'_T1'
         print('ID: ',ID)
     #searching the dictionary for keys fitting the hovertext   
-    image=image_dict[ID]
-    #base64 encode the image   
-    
-    #testcode
+    image=image_dict[ID] 
     #reading the image as np array
     img=imageio.imread(image)
     #getting x and y coordinates from the data table, using the original ID,
@@ -464,22 +481,67 @@ def update_image_overlay(hoverData, image_dict, image_type, image_selector, shar
     x_coord=int(data[data['unique_time']==ID_or]['Location_Center_X'].values)
     y_coord=int(data[data['unique_time']==ID_or]['Location_Center_Y'].values)
     #manipulating a range of pixels around the center into being green
-    img[y_coord-5:y_coord+5, x_coord-5:x_coord+5]=[0, 255, 0]
+    img[y_coord-5:y_coord+5, x_coord-5:x_coord+5]=[255, 0, 0]
     #base64 encoding the image
     temp=Image.fromarray(img)
+    #saving the images
     temp.save('temp.png')
+    #opening the image again and base64 encode it
     with open('temp.png', 'rb') as f:
         encoded=base64.b64encode(f.read())
-    #encoded=base64.b64encode(img)
     print('encoding complete')
     
-    #update the dictionary with the encoded image
-    #image_dict.update({ID:encoded})
-    #print(type(image))
-    #return the encoded image
-    #print("--- %s seconds ---" % (time.time() - start_time))
-    return 'data:image/png;base64,{}'.format(encoded.decode()) 
+
+    return 'data:image/png;base64,{}'.format(encoded.decode()), ID_or
+
+#%% flagging framework
+@app.callback(Output('click-data', 'children'),
+              [Input('migration_data', 'clickData')])    
+def display_click_data(clickData):
+    '''getting click data from graph and displaying it
+    '''
+    return json.dumps(clickData, indent=2)
+
+
+@app.callback(Output('shared_data2', 'children'),
+                [Input('comment_submit', 'n_clicks')],
+                [State('shared_data', 'children'),
+                State('track_comment', 'value'),
+                State('migration_data', 'clickData'),
+                State('identifier_selector', 'value'),
+                State('flag_options', 'value')],)
+def flag_data(n_clicks, shared_data, track_comment, click_data, identifier_selector, flag_options):
+    '''
+    gets the click data and allows you to add a comment to a new copy of the data frame
+    You have the option to either add that comment to the individual timepoint selected, or to
+    all timepoints of the track ID
+    '''
+
+    print(click_data['points'][0]['hovertext'])
+    #read previously filtered data frame
+    dff=pd.read_json(shared_data, orient='split')
+    #create a new column and fill it
+    dff['flags']=float('nan')
+    #get the unique ID from the hovertext
+    ID=click_data['points'][0]['hovertext']
     
+    #check flag options. If single, add the submitted comment only to 
+    #the selected timepoint
+    if flag_options=='single':
+        dff.loc[dff['unique_time']==ID, 'flags']=track_comment
+    #if 'all' remove the timepoint component from the string and add the comment
+    #to all datapoints with that ID
+    if flag_options=='all':
+       pattern=re.compile('_T.+')
+       try:
+           ID=ID.replace(re.search(pattern, ID).group(),'')
+       except AttributeError:
+           dff.loc[dff[identifier_selector]==ID, 'flags']=track_comment
+       #print(dff[dff[identifier_selector]==ID])
+        
+    dff=dff.to_json(date_format='iso', orient='split')
+  
+    return dff
 
 #%% Display image overlay, revert to this option until image manipulation is stable
 # =============================================================================
