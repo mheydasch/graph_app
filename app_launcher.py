@@ -55,7 +55,7 @@ other functions for calculations on data are defined in algorythm_definitions.py
 
 #%% app upload
 global df
-df=pd.DataFrame({'col1':[1, 2]})
+df=pd.DataFrame({'flags':[1, 2]})
 
 #%%
     
@@ -105,8 +105,16 @@ app.layout = html.Div([
         html.P('Select the minimum track length'),
         MD.track_length_selector(),
         html.Div(id='track_length_output', style={'margin-top': 20} ),
+        html.Div([
+        html.Div([
         html.P('Select the minimum travelled distance'),
         MD.distance_filter(),
+                ], className='three columns'),
+        html.Div([
+                html.P('Select which flags to exclude from the Graphs'),
+                MD.flag_filter()
+                ], className='three columns')
+        ], className='row'),
         html.P('Do you want to reuse a previously created instance of the graph, if available?'),
         MD.graph_reuse(),
         MD.plot_button()], className='six columns'
@@ -320,7 +328,7 @@ def update_images(n_clicks, folder):
               [Input('upload-image', 'contents')],
               [State('upload-image', 'filename'),
                State('upload-image', 'last_modified')])
-def update__images_output(list_of_contents, list_of_names, list_of_dates):
+def update_images_output(list_of_contents, list_of_names, list_of_dates):
     print(list_of_names)
     patterns=[re.compile('\.tiff$'), re.compile('\.png$'), re.compile('\.tif$'), re.compile('\.TIF$'), re.compile('\.jpeg$'), re.compile('\.jpg$')]
 
@@ -356,7 +364,7 @@ def display_image(component, filename):
 @app.callback([Output('classifier_choice', 'options'),
                Output('identifier_selector', 'options'),
                Output('timepoint_selector', 'options'),
-               Output('data_selector', 'options')],
+               Output('data_selector', 'options'),],
               [Input('output-data-upload', 'children')])
 
 def update_dropdown(contents):
@@ -365,6 +373,8 @@ def update_dropdown(contents):
     identifier_cols=col_labels
     timepoint_cols=col_labels
     data_cols=col_labels
+    #print(col_labels)
+
     return col_labels, identifier_cols, timepoint_cols, data_cols
 
 #is called once you select a column from the timepoint_selector dropdown menu
@@ -386,16 +396,22 @@ def get_max_timepoints(timepoint_selector):
 
 #gets called when you select a value on the track_length_selector slider
 @app.callback([Output('track_length_output', 'children'),
-              Output('shared_data', 'children')],
-              [Input('track_length_selector', 'value')],
-              [
-               State('identifier_selector', 'value'),
-               State('timepoint_selector', 'value')])
+              Output('shared_data', 'children'),
+              Output('flag_filter', 'options')],
+              [Input('track_length_selector', 'value'),
+               Input('comment_submit', 'n_clicks')],
+              [State('identifier_selector', 'value'),
+               State('timepoint_selector', 'value'),
+               State('track_comment', 'value'),
+               State('migration_data', 'clickData'),
+               State('flag_options', 'value')
+               ])
 
 
 #displays the selected value below the slider
 #and filters the data by the minimal track length as picked in the slider
-def display_value(track_length_selector,  identifier_selector, timepoint_selector):
+def filter_graph(track_length_selector, n_clicks, identifier_selector, timepoint_selector, 
+                 track_comment, clickData, flag_options):
     display_string='Minimum track length: {} {}'.format(track_length_selector, 'timepoints')
     #dff=pd.read_json(shared_data, orient='split')
     
@@ -405,9 +421,46 @@ def display_value(track_length_selector,  identifier_selector, timepoint_selecto
     #then the one chosen in the slider
     thresholded_tracks=track_lengths[track_lengths[timepoint_selector]>track_length_selector]
     track_ids=thresholded_tracks.index.tolist()
-    thresholded_data=df.loc[df[identifier_selector].isin(track_ids)]
+    dff=df.loc[df[identifier_selector].isin(track_ids)]
+    flag_filter=[{'label': 'None', 'value':'None'}]
+    print(track_comment)
+    #flagging framework
+    if clickData!=None:
+        print(clickData['points'][0]['hovertext'])
+        #read previously filtered data frame
+        #create a new column and fill it
+        try:
+            dff['flags']
+        except KeyError:
+            dff['flags']='None'
+        #get the unique ID from the hovertext
+        ID=clickData['points'][0]['hovertext']
+        
+        #check flag options. If single, add the submitted comment only to 
+        #the selected timepoint
+        if flag_options=='single':
+            dff.loc[dff['unique_time']==ID, 'flags']=track_comment
+            print('single')
+        #if 'all' remove the timepoint component from the string and add the comment
+        #to all datapoints with that ID
+        if flag_options=='all':
+           print('all')
+           pattern=re.compile('_T.+')
+           try:
+               ID=ID.replace(re.search(pattern, ID).group(),'')
+               dff.loc[dff[identifier_selector]==ID, 'flags']=track_comment
+           except AttributeError:
+               pass
 
-    return display_string, thresholded_data.to_json(date_format='iso', orient='split')
+        flags=list(dff['flags'].unique())
+        flag_filter=[{'label' :k, 'value' :k} for k in flags]
+        print(flags)
+
+        #print(dff.loc[dff[identifier_selector]==ID, 'flags'])
+           #print(dff[dff[identifier_selector]==ID])
+    dff=dff.to_json(date_format='iso', orient='split') 
+    print(flag_filter)
+    return display_string, dff, flag_filter
 #%% update graph 
 
 #creates a figure when the display plots button is pressed.
@@ -425,14 +478,23 @@ def display_value(track_length_selector,  identifier_selector, timepoint_selecto
                State('data_selector', 'value'),
                State('distance_filter', 'value'),
                State('graph_storage', 'component'),
-               State('graph_reuse', 'value')])
+               State('graph_reuse', 'value'),
+               State('flag_filter', 'value')])
 
-def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice, identifier_selector, timepoint_selector, data_selector, distance_filter, graph_storage, graph_reuse):
+def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice,
+               identifier_selector, timepoint_selector, data_selector, distance_filter, 
+               graph_storage, graph_reuse, flag_filter):
     #if the graph storage is empty an empty dictionary will be created
     if graph_storage==None or graph_reuse=='no':
         graph_storage={}
     #data is read from the shared data div
     dff=pd.read_json(shared_data, orient='split')
+    print(flag_filter)
+    print(type(flag_filter))
+    
+    if flag_filter is not None:
+        for i in flag_filter:
+            dff=dff[dff['flags']!=i]
     #if the current graph option is already stored in the graph storage, 
     #the stored graph will be displayed
     if graph_selector in graph_storage.keys():
@@ -443,7 +505,7 @@ def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice, identif
         graph_options={'lineplot':GD.lineplot, 'migration_distance':GD.migration_distance, 'time_series':GD.time_series}
         fig=graph_options[graph_selector](dat=dff, classifier_column=classifier_choice, 
                             identifier_column=identifier_selector,
-                            timepoint_column=timepoint_selector, data_column=data_selector, distance_filter=distance_filter, testmode=True)
+                            timepoint_column=timepoint_selector, data_column=data_selector, distance_filter=distance_filter, testmode=False)
         graph_storage.update({graph_selector:fig})
         return fig, graph_storage
 
@@ -503,45 +565,47 @@ def display_click_data(clickData):
     return json.dumps(clickData, indent=2)
 
 
-@app.callback(Output('shared_data2', 'children'),
-                [Input('comment_submit', 'n_clicks')],
-                [State('shared_data', 'children'),
-                State('track_comment', 'value'),
-                State('migration_data', 'clickData'),
-                State('identifier_selector', 'value'),
-                State('flag_options', 'value')],)
-def flag_data(n_clicks, shared_data, track_comment, click_data, identifier_selector, flag_options):
-    '''
-    gets the click data and allows you to add a comment to a new copy of the data frame
-    You have the option to either add that comment to the individual timepoint selected, or to
-    all timepoints of the track ID
-    '''
-
-    print(click_data['points'][0]['hovertext'])
-    #read previously filtered data frame
-    dff=pd.read_json(shared_data, orient='split')
-    #create a new column and fill it
-    dff['flags']=float('nan')
-    #get the unique ID from the hovertext
-    ID=click_data['points'][0]['hovertext']
-    
-    #check flag options. If single, add the submitted comment only to 
-    #the selected timepoint
-    if flag_options=='single':
-        dff.loc[dff['unique_time']==ID, 'flags']=track_comment
-    #if 'all' remove the timepoint component from the string and add the comment
-    #to all datapoints with that ID
-    if flag_options=='all':
-       pattern=re.compile('_T.+')
-       try:
-           ID=ID.replace(re.search(pattern, ID).group(),'')
-       except AttributeError:
-           dff.loc[dff[identifier_selector]==ID, 'flags']=track_comment
-       #print(dff[dff[identifier_selector]==ID])
-        
-    dff=dff.to_json(date_format='iso', orient='split')
-  
-    return dff
+# =============================================================================
+# @app.callback(Output('shared_data2', 'children'),
+#                 [Input('comment_submit', 'n_clicks')],
+#                 [State('shared_data', 'children'),
+#                 State('track_comment', 'value'),
+#                 State('migration_data', 'clickData'),
+#                 State('identifier_selector', 'value'),
+#                 State('flag_options', 'value')],)
+# def flag_data(n_clicks, shared_data, track_comment, click_data, identifier_selector, flag_options):
+#     '''
+#     gets the click data and allows you to add a comment to a new copy of the data frame
+#     You have the option to either add that comment to the individual timepoint selected, or to
+#     all timepoints of the track ID
+#     '''
+# 
+#     print(click_data['points'][0]['hovertext'])
+#     #read previously filtered data frame
+#     dff=pd.read_json(shared_data, orient='split')
+#     #create a new column and fill it
+#     dff['flags']=float('nan')
+#     #get the unique ID from the hovertext
+#     ID=click_data['points'][0]['hovertext']
+#     
+#     #check flag options. If single, add the submitted comment only to 
+#     #the selected timepoint
+#     if flag_options=='single':
+#         dff.loc[dff['unique_time']==ID, 'flags']=track_comment
+#     #if 'all' remove the timepoint component from the string and add the comment
+#     #to all datapoints with that ID
+#     if flag_options=='all':
+#        pattern=re.compile('_T.+')
+#        try:
+#            ID=ID.replace(re.search(pattern, ID).group(),'')
+#        except AttributeError:
+#            dff.loc[dff[identifier_selector]==ID, 'flags']=track_comment
+#        #print(dff[dff[identifier_selector]==ID])
+#         
+#     dff=dff.to_json(date_format='iso', orient='split')
+#   
+#     return dff
+# =============================================================================
 
 #%% Display image overlay, revert to this option until image manipulation is stable
 # =============================================================================

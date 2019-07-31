@@ -188,3 +188,16 @@ def track_comment():
             )
 def comment_submit():
     return html.Button(id='comment_submit', n_clicks=0, children='Add Comment')    
+def flag_options():
+    return dcc.RadioItems(
+    options=[
+            {'label':'all', 'value' : 'all'},
+             {'label':'single', 'value' : 'single'}],
+             value='all',
+             id='flag_options')
+def flag_filter():
+    return dcc.Dropdown(
+            id='flag_filter',
+            options=[{'label':'placeholder', 'value':'placeholder'}],
+            multi=True,
+            )
