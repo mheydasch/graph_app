@@ -404,14 +404,16 @@ def get_max_timepoints(timepoint_selector):
                State('timepoint_selector', 'value'),
                State('track_comment', 'value'),
                State('migration_data', 'clickData'),
-               State('flag_options', 'value')
+               State('flag_options', 'value'),
+               State('flag_filter', 'options'),
+               State('shared_data', 'children')
                ])
 
 
 #displays the selected value below the slider
 #and filters the data by the minimal track length as picked in the slider
 def filter_graph(track_length_selector, n_clicks, identifier_selector, timepoint_selector, 
-                 track_comment, clickData, flag_options):
+                 track_comment, clickData, flag_options, flag_filter, shared_data):
     display_string='Minimum track length: {} {}'.format(track_length_selector, 'timepoints')
     #dff=pd.read_json(shared_data, orient='split')
     
@@ -421,8 +423,11 @@ def filter_graph(track_length_selector, n_clicks, identifier_selector, timepoint
     #then the one chosen in the slider
     thresholded_tracks=track_lengths[track_lengths[timepoint_selector]>track_length_selector]
     track_ids=thresholded_tracks.index.tolist()
-    dff=df.loc[df[identifier_selector].isin(track_ids)]
-    flag_filter=[{'label': 'None', 'value':'None'}]
+    if shared_data==None:
+        dff=df.loc[df[identifier_selector].isin(track_ids)]
+    else:
+        dff=pd.read_json(shared_data, orient='split').loc[df[identifier_selector].isin(track_ids)]
+    #flag_filter=[{'label': 'None', 'value':'None'}]
     print(track_comment)
     #flagging framework
     if clickData!=None:
@@ -433,6 +438,7 @@ def filter_graph(track_length_selector, n_clicks, identifier_selector, timepoint
             dff['flags']
         except KeyError:
             dff['flags']='None'
+            print('flags resetted')
         #get the unique ID from the hovertext
         ID=clickData['points'][0]['hovertext']
         
@@ -505,7 +511,7 @@ def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice,
         graph_options={'lineplot':GD.lineplot, 'migration_distance':GD.migration_distance, 'time_series':GD.time_series}
         fig=graph_options[graph_selector](dat=dff, classifier_column=classifier_choice, 
                             identifier_column=identifier_selector,
-                            timepoint_column=timepoint_selector, data_column=data_selector, distance_filter=distance_filter, testmode=False)
+                            timepoint_column=timepoint_selector, data_column=data_selector, distance_filter=distance_filter, testmode=True)
         graph_storage.update({graph_selector:fig})
         return fig, graph_storage
 

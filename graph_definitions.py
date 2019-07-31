@@ -86,6 +86,7 @@ def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_colum
 
     fig.update_layout(margin={'l': 40, 'b': 5, 't': 30, 'r': 40},
             height=row_n*375, width=750)
+    fig.update_layout({'clickmode':'event+select'})
   
 
     print('...done')
@@ -112,7 +113,8 @@ def migration_distance(dat=[], classifier_column='', identifier_column='', timep
 
         #x=[xpos],
         name=i,
-        boxpoints='all'), 
+        boxpoints='all',
+        notched=True), 
         row=1, col=1)
 
 
@@ -123,7 +125,8 @@ def migration_distance(dat=[], classifier_column='', identifier_column='', timep
 
         #x=[xpos],
         name=i,
-        boxpoints='all'), 
+        boxpoints='all',
+        notched=True), 
         row=2, col=1)
     fig.update_layout(margin={'l': 40, 'b': 5, 't': 30, 'r': 200},
             height=750, width=750)
