@@ -71,7 +71,7 @@ def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_colum
             #getting y values
             y=dat_class.loc[dat_class[identifier_column]==c][Y_column],
             #getting unique ID
-            hovertext=dat_class.loc[dat_class[identifier_column]==c]['unique_time']),
+            hovertext=dat_class.loc[dat_class[identifier_column]==c][identifier_column]),
 
             row=int(rowlist[math.floor(r_i)]) , col=1)
 

@@ -11,7 +11,7 @@ import io
 import time
 import numpy as np
 from PIL import Image
-
+import cv2
 
 import dash
 from dash.dependencies import Input, Output, State
@@ -19,6 +19,8 @@ import dash_core_components as dcc
 import dash_html_components as html
 import imageio
 import json
+import flask
+from natsort import natsorted
 #from flask_caching import Cache
 
 import pandas as pd
@@ -134,7 +136,7 @@ app.layout = html.Div([
                                                #MD.save_button()
                                                ],
                                           className= 'six columns'),
-                                     html.Div([html.Img(id='image-overlay',
+                                     html.Div([html.Video(id='image-overlay',
                                                         style={
                                                             'height': '75%',
                                                             'width': '75%',
@@ -142,7 +144,8 @@ app.layout = html.Div([
                                                             'position': 'relative',
                                                             'margin-top': 20,
                                                             'margin-right': 20
-                                                                }),
+                                                                }, 
+                                                                controls=True),
                                                html.Img(id='test_image',
                                                         style={
                                                             'height': '75%',
@@ -288,6 +291,8 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
 #calls the upload function, updating the global variable df and also storing 
 def update_images(n_clicks, folder):
     find_dir='overlays'
+    #finding only png files
+    png_find=re.compile('.png')
     image_dict={}
     print(folder)
     print('uploading...')
@@ -297,7 +302,7 @@ def update_images(n_clicks, folder):
     #looks in each folder from given path
     #if folder is matching the KD pattern, the find_dir pattern and
     #if there are csv files
-        if find_dir in root and len([x for x in files])!=0:
+        if find_dir in root and len([x for x in files if re.search(png_find, x)])!=0:
             #print(find_dir)
             #finds the csv files in the folder and adds them to a list
             image_files=[x for x in files]
@@ -515,10 +520,10 @@ def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice,
         graph_storage.update({graph_selector:fig})
         return fig, graph_storage
 
-#%%
+#%% atm changing to click data showing full video 
 @app.callback([Output('image-overlay', 'src'),
                Output('image_name', 'children')],
-              [Input('migration_data', 'hoverData')],
+              [Input('migration_data', 'clickData')],
               [State('image_list','component'),
                State('image_type', 'children'),
                State('Image_selector', 'value'),
@@ -530,37 +535,92 @@ def update_image_overlay(hoverData, image_dict, image_type, image_selector, shar
     #(stripping of track_ID)
     try:
         #exclusion criterium if timepoint is already there
-        exclusion=re.compile('_E.+?(?=\_)')
+        exclusion=re.compile('_E+.*')
+        #taken from hovertext should be something like 'WB2_S1324_E4'
         ID_or=hoverData['points'][0]['hovertext']
+        
+        #getting the track ID of the individual cell. Something like 'E4'
+        track_ID=re.search(exclusion, ID_or).group()
+        print('track_ID: ', track_ID)
+        #getting the ID to the images by stripping off extensions
+        #something like 'WB2_S1324
         ID=ID_or.replace(re.search(exclusion, ID_or).group(),'')
         print('ID_or: ', ID_or)
+        print('ID: ', ID)
     except AttributeError:        
         #exclusion criterium if timepoint isnot in hovertext
         exclusion_nt=re.compile('_E+.*')
+        #hovertext in graph needs to be changed back to uniqe time when region should be marked
         ID=hoverData['points'][0]['hovertext'].replace(re.search(exclusion_nt, hoverData['points'][0]['hovertext']).group(),'')
-        ID=ID+'_T1'
         print('ID: ',ID)
     #searching the dictionary for keys fitting the hovertext   
-    image=image_dict[ID] 
-    #reading the image as np array
-    img=imageio.imread(image)
-    #getting x and y coordinates from the data table, using the original ID,
-    #which includes the track ID of the cell
-    x_coord=int(data[data['unique_time']==ID_or]['Location_Center_X'].values)
-    y_coord=int(data[data['unique_time']==ID_or]['Location_Center_Y'].values)
-    #manipulating a range of pixels around the center into being green
-    img[y_coord-5:y_coord+5, x_coord-5:x_coord+5]=[255, 0, 0]
-    #base64 encoding the image
-    temp=Image.fromarray(img)
-    #saving the images
-    temp.save('temp.png')
-    #opening the image again and base64 encode it
-    with open('temp.png', 'rb') as f:
-        encoded=base64.b64encode(f.read())
-    print('encoding complete')
+    imagelist=[i for i in image_dict.keys() if ID in i]
     
 
-    return 'data:image/png;base64,{}'.format(encoded.decode()), ID_or
+    imagelist=natsorted(imagelist)
+    loaded_list=[]
+    for i in imagelist:
+        #adding the unoque ID of the cell back into the key of the image
+        #to get X, Y coordinates. Something like 'WB2_S1324_E4_T1'
+        tracking_ID=i.replace(re.search('_T', i).group(), track_ID+'_T')
+        print('tracking_ID: ',tracking_ID)
+        img=imageio.imread(image_dict[i])
+        x_coord=int(data[data['unique_time']==tracking_ID]['Location_Center_X'].values)
+        y_coord=int(data[data['unique_time']==tracking_ID]['Location_Center_Y'].values)
+        img[y_coord-5:y_coord+5, x_coord-5:x_coord+5]=[255, 0, 0]
+        loaded_list.append(img)
+    #create a writer for mp4 format
+    writer = imageio.get_writer('temp.mp4', fps=8)
+    #append the images from the list to a video
+    for i in loaded_list:
+        writer.append_data(i)
+    writer.close()
+    
+# =============================================================================
+#     frame = cv2.imread(image_dict[imagelist[0]])
+#     height, width, layers=frame.shape
+#     
+#     video = cv2.VideoWriter('temp.avi', 0, 2, (width,height))
+#     for i in imagelist:
+#         video.write(cv2.imread(image_dict[i]))
+#     cv2.destroyAllWindows()
+#     video.release()
+# =============================================================================
+# =============================================================================
+#        enc_imglist=[]    
+#        for i in imagelist:
+# =============================================================================
+    with open('temp.mp4', 'rb') as f:
+        temp_avi=base64.b64encode(f.read())
+
+    
+    #image=image_dict[ID] 
+    #reading the image as np array
+# =============================================================================
+#     img=imageio.imread(image)
+#     #getting x and y coordinates from the data table, using the original ID,
+#     #which includes the track ID of the cell
+#     x_coord=int(data[data['unique_time']==ID_or]['Location_Center_X'].values)
+#     y_coord=int(data[data['unique_time']==ID_or]['Location_Center_Y'].values)
+#     #manipulating a range of pixels around the center into being green
+#     img[y_coord-5:y_coord+5, x_coord-5:x_coord+5]=[255, 0, 0]
+#     #base64 encoding the image
+#     temp=Image.fromarray(img)
+#     #saving the images
+#     temp.save('temp.png')
+#     #opening the image again and base64 encode it
+#     with open('temp.png', 'rb') as f:
+#         encoded=base64.b64encode(f.read())
+# =============================================================================
+    print('encoding complete')
+    
+# =============================================================================
+#     for i in enc_imglist:
+#         print('preparing next image')
+#         time.sleep(1)
+# =============================================================================
+    #dir_path = os.path.dirname(os.path.realpath(__file__))
+    return 'data:video/mp4;base64,{}'.format(temp_avi.decode()), ID_or
 
 #%% flagging framework
 @app.callback(Output('click-data', 'children'),

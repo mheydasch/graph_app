@@ -117,8 +117,9 @@ def migration_distance(dat=[], classifier_column='', identifier_column='', timep
 
     return fig
     
-#%%
-@app.callback(Output('image-overlay', 'src'),
+#%% displaying individual image on hoverdata with region marked
+@app.callback([Output('image-overlay', 'src'),
+               Output('image_name', 'children')],
               [Input('migration_data', 'hoverData')],
               [State('image_list','component'),
                State('image_type', 'children'),
@@ -127,43 +128,75 @@ def migration_distance(dat=[], classifier_column='', identifier_column='', timep
 def update_image_overlay(hoverData, image_dict, image_type, image_selector, shared_data):
     #start_time=time.time()
     data=pd.read_json(shared_data, orient='split')
-
-    #exclusion criterium if timepoint is already there
-    exclusion=re.compile('_E.+?(?=\_)')
-    #print(image_type)
-    
-    #exclusion criterium if timepoint isnot in hovertext
-    exclusion_nt=re.compile('_E+.*')
     #getting hovertext from hoverdata and removing discrepancies between hover text and filenames
     #(stripping of track_ID)
     try:
+        #exclusion criterium if timepoint is already there
+        exclusion=re.compile('_E.+?(?=\_)')
         ID_or=hoverData['points'][0]['hovertext']
         ID=ID_or.replace(re.search(exclusion, ID_or).group(),'')
-        print(ID_or)
-    except AttributeError:
+        print('ID_or: ', ID_or)
+    except AttributeError:        
+        #exclusion criterium if timepoint isnot in hovertext
+        exclusion_nt=re.compile('_E+.*')
         ID=hoverData['points'][0]['hovertext'].replace(re.search(exclusion_nt, hoverData['points'][0]['hovertext']).group(),'')
         ID=ID+'_T1'
+        print('ID: ',ID)
     #searching the dictionary for keys fitting the hovertext   
-    image=image_dict[ID]
-    #base64 encode the image   
-    
-    #testcode
+    image=image_dict[ID] 
     #reading the image as np array
     img=imageio.imread(image)
     #getting x and y coordinates from the data table, using the original ID,
-    #which encludes the track ID of the cell
+    #which includes the track ID of the cell
     x_coord=int(data[data['unique_time']==ID_or]['Location_Center_X'].values)
     y_coord=int(data[data['unique_time']==ID_or]['Location_Center_Y'].values)
     #manipulating a range of pixels around the center into being green
-    img[x_coord-5:x_coord+5, y_coord-5:y_coord+5]=[0, 255, 0]
-    img=Image.fromarray(img)
+    img[y_coord-5:y_coord+5, x_coord-5:x_coord+5]=[255, 0, 0]
     #base64 encoding the image
-    encoded=base64.b64encode(img)
-        
+    temp=Image.fromarray(img)
+    #saving the images
+    temp.save('temp.png')
+    #opening the image again and base64 encode it
+    with open('temp.png', 'rb') as f:
+        encoded=base64.b64encode(f.read())
+    print('encoding complete')
     
-    #update the dictionary with the encoded image
-    #image_dict.update({ID:encoded})
-    #print(type(image))
-    #return the encoded image
-    #print("--- %s seconds ---" % (time.time() - start_time))
-    return 'data:image/png;base64,{}'.format(encoded.decode()) 
+
+    return 'data:image/png;base64,{}'.format(encoded.decode()), ID_or
+#%%displaying individual image on hoverdata without marking a region
+    # @app.callback(Output('image-overlay', 'src'),
+#               [Input('migration_data', 'hoverData')],
+#               [State('image_list','component'),
+#                State('image_type', 'children'),
+#                State('Image_selector', 'value'),])
+# def update_image_overlay(hoverData, image_dict, image_type, image_selector):
+#     start_time=time.time()
+# 
+#     #exclusion criterium if timepoint is already there
+#     exclusion=re.compile('_E.+?(?=\_)')
+#     #print(image_type)
+#     
+#     #exclusion criterium if timepoint isnot in hovertext
+#     exclusion_nt=re.compile('_E+.*')
+#     #getting hovertext from hoverdata and removing discrepancies between hover text and filenames
+#     try:
+#         ID=hoverData['points'][0]['hovertext'].replace(re.search(exclusion, hoverData['points'][0]['hovertext']).group(),'')
+#     except AttributeError:
+#         ID=hoverData['points'][0]['hovertext'].replace(re.search(exclusion_nt, hoverData['points'][0]['hovertext']).group(),'')
+#         ID=ID+'_T1'
+#     #if re.search('_T[0-9]+', ID)==None:
+#         
+#     print(ID)
+#     #searching the dictionary for keys fitting the hovertext
+#  
+#    
+#     image=image_dict[ID]
+#     #base64 encode the image
+#     with open(image, 'rb') as f:
+#         encoded=base64.b64encode(f.read())
+#     #update the dictionary with the encoded image
+#     image_dict.update({ID:encoded})
+#     print(type(image))
+#     #return the encoded image
+#     print("--- %s seconds ---" % (time.time() - start_time))
+#     return 'data:image/png;base64,{}'.format(encoded.decode()) 
