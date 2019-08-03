@@ -12,7 +12,7 @@ import time
 import numpy as np
 from PIL import Image
 import cv2
-import urllib
+import urllib.parse
 
 import dash
 from dash.dependencies import Input, Output, State
@@ -201,7 +201,7 @@ app.layout = html.Div([
     html.Div(id='output-image-upload', style={'display':'none'}),
      #hidden divs for storing data
     html.Div(id='shared_data', style={'display':'none'}),
-    html.Div(id='shared_data2', style={'display':'none'}),
+    html.Div(id='flag_storage', style={'display':'none'}),
     #holding the type of the uploaded images
     html.Div(id='image_type', style={'display':'none'}),
     #holding the uploaded images
@@ -404,42 +404,69 @@ def get_max_timepoints(timepoint_selector):
     for m in range(min_timepoint, max_timepoint, 5):
         marks.update({m:str(m)})
     return max_timepoint, marks, value
-
+#%%
 #gets called when you select a value on the track_length_selector slider
 @app.callback([Output('track_length_output', 'children'),
-              Output('shared_data', 'children'),
-              Output('flag_filter', 'options')],
+              Output('shared_data', 'children')],
               [Input('track_length_selector', 'value'),
-               Input('comment_submit', 'n_clicks')],
-              [State('identifier_selector', 'value'),
-               State('timepoint_selector', 'value'),
-               State('track_comment', 'value'),
-               State('migration_data', 'clickData'),
-               State('flag_options', 'value'),
-               State('flag_filter', 'options'),
-               State('shared_data', 'children')
+               Input('flag_filter', 'value')],
+              [State('flag_storage', 'children'),
+               State('identifier_selector', 'value'),
+               State('timepoint_selector', 'value')
                ])
 
 
 #displays the selected value below the slider
 #and filters the data by the minimal track length as picked in the slider
-def filter_graph(track_length_selector, n_clicks, identifier_selector, timepoint_selector, 
-                 track_comment, clickData, flag_options, flag_filter, shared_data):
+def filter_graph(track_length_selector, flag_filter, flag_storage, identifier_selector, timepoint_selector, 
+                  ):
     display_string='Minimum track length: {} {}'.format(track_length_selector, 'timepoints')
-    #dff=pd.read_json(shared_data, orient='split')
-    
+    dff=df
+    #if flag storage is already filled, take data from it  
+    try:
+        flag_storage=pd.read_json(flag_storage, orient='split')
+        if identifier_selector in flag_storage:
+            dff=flag_storage
+            print('flag_storage not empty')
+    #otherwise take glboal variable  
+    except ValueError:
+        print('flag_storage empty')
     #grouping the data by the identifier
-    track_lengths=pd.DataFrame(df.groupby(identifier_selector)[timepoint_selector].count())
+    track_lengths=pd.DataFrame(dff.groupby(identifier_selector)[timepoint_selector].count())
     #filtering the track lengths by only selecting those with a track length higher,
     #then the one chosen in the slider
     thresholded_tracks=track_lengths[track_lengths[timepoint_selector]>track_length_selector]
     track_ids=thresholded_tracks.index.tolist()
-    if shared_data==None:
-        dff=df.loc[df[identifier_selector].isin(track_ids)]
-    else:
-        dff=pd.read_json(shared_data, orient='split').loc[df[identifier_selector].isin(track_ids)]
-    #flag_filter=[{'label': 'None', 'value':'None'}]
+    dff=dff.loc[df[identifier_selector].isin(track_ids)]
+    print('tracks with length < {} have been excluded'.format(track_length_selector))
+
+
+    dff=dff.to_json(date_format='iso', orient='split') 
+
+    return display_string, dff
+
+#%% storing flags to flag sotrage once the submit button is pressed
+@app.callback([Output('flag_storage', 'children'),
+              Output('flag_filter', 'options')],
+              [Input('comment_submit', 'n_clicks')],
+              [State('identifier_selector', 'value'),
+               State('track_comment', 'value'),
+               State('migration_data', 'clickData'),
+               State('flag_options', 'value'),
+               State('flag_filter', 'options'),
+               State('flag_storage', 'children')
+               ])
+def update_flags(n_clicks, identifier_selector, 
+                 track_comment, clickData, flag_options, flag_filter, flag_storage):
     print(track_comment)
+    dff=df
+    try: 
+        flag_storage=pd.read_json(flag_storage, orient='split')
+        if identifier_selector in flag_storage:
+            dff=pd.read_json(flag_storage, orient='split')
+    except ValueError:
+        print('flag_storage empty')
+    
     #flagging framework
     if clickData!=None:
         print(clickData['points'][0]['hovertext'])
@@ -467,17 +494,16 @@ def filter_graph(track_length_selector, n_clicks, identifier_selector, timepoint
                ID=ID.replace(re.search(pattern, ID).group(),'')
                dff.loc[dff[identifier_selector]==ID, 'flags']=track_comment
            except AttributeError:
-               pass
+               dff.loc[dff[identifier_selector]==ID, 'flags']=track_comment
+
 
         flags=list(dff['flags'].unique())
         flag_filter=[{'label' :k, 'value' :k} for k in flags]
-        print(flags)
+        print('flags', flags)
+    flag_storage=dff.to_json(date_format='iso', orient='split') 
+    print('flag_filter', flag_filter)    
+    return flag_storage, flag_filter
 
-        #print(dff.loc[dff[identifier_selector]==ID, 'flags'])
-           #print(dff[dff[identifier_selector]==ID])
-    dff=dff.to_json(date_format='iso', orient='split') 
-    print(flag_filter)
-    return display_string, dff, flag_filter
 #%% update graph 
 
 #creates a figure when the display plots button is pressed.
@@ -663,12 +689,17 @@ def update_image_graph(value, image_dict):
 
 #%% Download csv file
 @app.callback(Output('download-link', 'href'),
-              [Input('save_df', 'n_clicks')],
-              [State('shared_data', 'children')],               )
+              [Input('flag_storage', 'children')],)
+                             
 def update_download_link(shared_data):
-    data=pd.read_json(shared_data, orient='split')
-    csv_string = data.to_csv(index=False, encoding='utf-8')
-    csv_string = "data:text/csv;charset=utf-8," + urllib.quote(csv_string)
+    csv_string=''
+    try: 
+        data=pd.read_json(shared_data, orient='split')
+        type(shared_data)
+        csv_string = data.to_csv(index=False, encoding='utf-8')
+        csv_string = "data:text/csv;charset=utf-8," + urllib.parse.quote(csv_string)
+    except Exception as e:
+        print(e)
     return csv_string
     
 # =============================================================================
