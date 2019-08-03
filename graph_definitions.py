@@ -205,7 +205,10 @@ def time_series(dat=[], classifier_column='', identifier_column='', timepoint_co
 
 #%%
 def image_graph(img, x_C=1024, y_C=1024, X_S=0, Y_S=0):
-    
+    '''
+    this graph is supposed to show an image an mark a point on it.
+    '''
+    #calculate aspect ratio
     aspect_ratio=x_C/y_C  
     fig=go.Figure()
     # Add invisible scatter trace.
@@ -221,9 +224,11 @@ def image_graph(img, x_C=1024, y_C=1024, X_S=0, Y_S=0):
     #add cell marker    
     fig.add_trace(go.Scatter(
             x=[X_S],
+            #images start with y0 at the top, graphs with y0 at the bottom
             y=[abs(Y_S-y_C)],
             mode='markers',
             marker_opacity=1))
+    
     fig.update_layout(
             images=[
                     go.layout.Image(source=img,
@@ -231,12 +236,14 @@ def image_graph(img, x_C=1024, y_C=1024, X_S=0, Y_S=0):
                                     yref='y',
                                     x=0,
                                     y=y_C,
-                                    
+                                    #using input image sizes as the
+                                    #axes legnths for the graph
                                     sizex=x_C,
                                     sizey=y_C,
                                     sizing='stretch',
                                     opacity=1,
                                     layer='below')],
+            #defining height and width of the graph                        
             height=750,
             width=750*aspect_ratio)
                   

@@ -12,6 +12,7 @@ import time
 import numpy as np
 from PIL import Image
 import cv2
+import urllib
 
 import dash
 from dash.dependencies import Input, Output, State
@@ -126,7 +127,16 @@ app.layout = html.Div([
 #tabs section start
     dcc.Tabs(id='tabs', children=[
              dcc.Tab(label='Table', 
-                     children= [html.Table(id='output-data-upload')]),    #calling the table
+                     children= [html.Table(id='output-data-upload'),
+                                    html.A(
+                                            'Download Data',
+                                            id='download-link',
+                                            download="rawdata.csv",
+                                            href="",
+                                            target="_blank"
+                                            ),
+                                            MD.save_button()]),
+                     #calling the table
                              
              dcc.Tab(label='Graph',
                      #calling the graph 
@@ -651,7 +661,16 @@ def update_image_graph(value, image_dict):
     return GD.image_graph('data:image/png;base64,{}'.format(encoded.decode()), x_C=x, y_C=y, 
                           X_S=image_dict[img][0], Y_S=image_dict[img][1])
 
-
+#%% Download csv file
+@app.callback(Output('download-link', 'href'),
+              [Input('save_df', 'n_clicks')],
+              [State('shared_data', 'children')],               )
+def update_download_link(shared_data):
+    data=pd.read_json(shared_data, orient='split')
+    csv_string = data.to_csv(index=False, encoding='utf-8')
+    csv_string = "data:text/csv;charset=utf-8," + urllib.quote(csv_string)
+    return csv_string
+    
 # =============================================================================
 # @app.callback(Output('shared_data2', 'children'),
 #                 [Input('comment_submit', 'n_clicks')],

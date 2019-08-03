@@ -140,7 +140,7 @@ def data_selector(df):
             value=['Location_Center_X_Zeroed', 'Location_Center_Y_Zeroed'])
 
 def save_button():
-    return html.Button(id='save_graphs', n_clicks=0, children='save graphs')
+    return html.Button(id='save_df', n_clicks=0, children='Download datatable', style={'display':'none'})
 
 #%% images
 def Image_folder():
@@ -193,6 +193,8 @@ def image_slider():
                    5:'5',
                    10:'10'},
            updatemode='drag')
+    
+    
 #%% track filtering
 def track_comment():
     return dcc.Textarea(
