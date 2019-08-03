@@ -178,6 +178,21 @@ def Image_selector():
         {'label': 'No', 'value' : 'No'}], 
         value='No', 
         id='Image_selector')
+def image_slider():
+    
+    '''
+    slider to select image to display
+    '''
+    return dcc.Slider(
+            id='image_slider',
+            min=0,
+            max=10,
+            step=1,
+            value=0,
+            marks={0:'0',
+                   5:'5',
+                   10:'10'},
+           updatemode='drag')
 #%% track filtering
 def track_comment():
     return dcc.Textarea(

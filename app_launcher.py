@@ -131,21 +131,17 @@ app.layout = html.Div([
              dcc.Tab(label='Graph',
                      #calling the graph 
                      children= [html.Div([
-                                     
+                                     #graph for showing data
                                      html.Div([dcc.Graph(id='migration_data'),
                                                #MD.save_button()
                                                ],
                                           className= 'six columns'),
-                                     html.Div([html.Video(id='image-overlay',
-                                                        style={
-                                                            'height': '75%',
-                                                            'width': '75%',
-                                                            'float': 'fixed',
-                                                            'position': 'relative',
-                                                            'margin-top': 20,
-                                                            'margin-right': 20
-                                                                }, 
-                                                                controls=True),
+                                               #graph for showing the image
+                                     html.Div([dcc.Graph(id='image-overlay'),
+                                               #slider for selection of image
+                                               MD.image_slider(),
+                                               
+                                               html.Div(id='image_slider_output', style={'margin-top': 20},),
                                                html.Img(id='test_image',
                                                         style={
                                                             'height': '75%',
@@ -521,7 +517,7 @@ def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice,
         return fig, graph_storage
 
 #%% atm changing to click data showing full video 
-@app.callback([Output('image-overlay', 'src'),
+@app.callback([Output('image_list', 'children'),
                Output('image_name', 'children')],
               [Input('migration_data', 'clickData')],
               [State('image_list','component'),
@@ -530,17 +526,23 @@ def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice,
                State('shared_data', 'children')])
 def update_image_overlay(hoverData, image_dict, image_type, image_selector, shared_data):
     #start_time=time.time()
+    #Error message if no images have been uploaded
+    if len(image_dict)==0:
+        print('No images have been uploaded')
     data=pd.read_json(shared_data, orient='split')
     #getting hovertext from hoverdata and removing discrepancies between hover text and filenames
     #(stripping of track_ID)
     try:
         #exclusion criterium if timepoint is already there
         exclusion=re.compile('_E+.*')
+        track_pattern=re.compile('_E.+?(?=\_)')
         #taken from hovertext should be something like 'WB2_S1324_E4'
         ID_or=hoverData['points'][0]['hovertext']
         
-        #getting the track ID of the individual cell. Something like 'E4'
-        track_ID=re.search(exclusion, ID_or).group()
+        #getting the track ID of the individual cell. Something like '_E4'
+        track_ID=re.search(track_pattern, ID_or).group()
+
+        
         print('track_ID: ', track_ID)
         #getting the ID to the images by stripping off extensions
         #something like 'WB2_S1324
@@ -550,77 +552,52 @@ def update_image_overlay(hoverData, image_dict, image_type, image_selector, shar
     except AttributeError:        
         #exclusion criterium if timepoint isnot in hovertext
         exclusion_nt=re.compile('_E+.*')
+        ID_or=hoverData['points'][0]['hovertext']
+        
+        #getting the track ID of the individual cell. Something like '_E4'
+        track_ID=re.search(exclusion, ID_or).group()
+
+        
+        print('track_ID: ', track_ID)
+        #getting the ID to the images by stripping off extensions
+        #something like 'WB2_S1324
+        ID=ID_or.replace(re.search(exclusion, ID_or).group(),'')
+        print('ID_or: ', ID_or)
+        print('ID: ', ID)
         #hovertext in graph needs to be changed back to uniqe time when region should be marked
         ID=hoverData['points'][0]['hovertext'].replace(re.search(exclusion_nt, hoverData['points'][0]['hovertext']).group(),'')
         print('ID: ',ID)
     #searching the dictionary for keys fitting the hovertext   
     imagelist=[i for i in image_dict.keys() if ID in i]
+    if len(imagelist)==0:
+        print('Key Error, no images associated with {} found.'.format(ID))
     
-
+    #sort images 
     imagelist=natsorted(imagelist)
-    loaded_list=[]
+    #getting dimensions of image
+    img_size=imageio.imread(image_dict[imagelist[0]]).shape
+    #inidiate a dictionary to coordinates for images. Including image shape
+    loaded_dict={'shape':img_size}
     for i in imagelist:
         #adding the unoque ID of the cell back into the key of the image
         #to get X, Y coordinates. Something like 'WB2_S1324_E4_T1'
         tracking_ID=i.replace(re.search('_T', i).group(), track_ID+'_T')
         print('tracking_ID: ',tracking_ID)
-        img=imageio.imread(image_dict[i])
-        x_coord=int(data[data['unique_time']==tracking_ID]['Location_Center_X'].values)
-        y_coord=int(data[data['unique_time']==tracking_ID]['Location_Center_Y'].values)
-        img[y_coord-5:y_coord+5, x_coord-5:x_coord+5]=[255, 0, 0]
-        loaded_list.append(img)
-    #create a writer for mp4 format
-    writer = imageio.get_writer('temp.mp4', fps=8)
-    #append the images from the list to a video
-    for i in loaded_list:
-        writer.append_data(i)
-    writer.close()
-    
-# =============================================================================
-#     frame = cv2.imread(image_dict[imagelist[0]])
-#     height, width, layers=frame.shape
-#     
-#     video = cv2.VideoWriter('temp.avi', 0, 2, (width,height))
-#     for i in imagelist:
-#         video.write(cv2.imread(image_dict[i]))
-#     cv2.destroyAllWindows()
-#     video.release()
-# =============================================================================
-# =============================================================================
-#        enc_imglist=[]    
-#        for i in imagelist:
-# =============================================================================
-    with open('temp.mp4', 'rb') as f:
-        temp_avi=base64.b64encode(f.read())
-
-    
-    #image=image_dict[ID] 
-    #reading the image as np array
-# =============================================================================
-#     img=imageio.imread(image)
-#     #getting x and y coordinates from the data table, using the original ID,
-#     #which includes the track ID of the cell
-#     x_coord=int(data[data['unique_time']==ID_or]['Location_Center_X'].values)
-#     y_coord=int(data[data['unique_time']==ID_or]['Location_Center_Y'].values)
-#     #manipulating a range of pixels around the center into being green
-#     img[y_coord-5:y_coord+5, x_coord-5:x_coord+5]=[255, 0, 0]
-#     #base64 encoding the image
-#     temp=Image.fromarray(img)
-#     #saving the images
-#     temp.save('temp.png')
-#     #opening the image again and base64 encode it
-#     with open('temp.png', 'rb') as f:
-#         encoded=base64.b64encode(f.read())
-# =============================================================================
+        img=image_dict[i]
+        try:
+            x_coord=int(data[data['unique_time']==tracking_ID]['Location_Center_X'].values)
+            y_coord=int(data[data['unique_time']==tracking_ID]['Location_Center_Y'].values)
+            #img[y_coord-5:y_coord+5, x_coord-5:x_coord+5]=[255, 0, 0]
+       #if no data for timepoint is found print error message
+        except TypeError:
+            print('no segmentation found for', i)
+        
+        loaded_dict.update({img:[x_coord, y_coord]})
+    print(type(loaded_dict))
+    print(loaded_dict)    
     print('encoding complete')
-    
-# =============================================================================
-#     for i in enc_imglist:
-#         print('preparing next image')
-#         time.sleep(1)
-# =============================================================================
-    #dir_path = os.path.dirname(os.path.realpath(__file__))
-    return 'data:video/mp4;base64,{}'.format(temp_avi.decode()), ID_or
+    return json.dumps(loaded_dict), ID_or
+    #return 'data:video/mp4;base64,{}'.format(temp_avi.decode()), ID_or
 
 #%% flagging framework
 @app.callback(Output('click-data', 'children'),
@@ -629,6 +606,50 @@ def display_click_data(clickData):
     '''getting click data from graph and displaying it
     '''
     return json.dumps(clickData, indent=2)
+
+
+
+#%% scrollable images
+@app.callback([Output('image_slider', 'max'),
+             Output('image_slider', 'marks'),
+             Output('image_slider_output', 'value')],
+             [Input('image_list', 'children')])
+#gets the minimum and maxium value of the timepoint column as selected
+#and adjusts min and max values of the track_length_selector slider as first output
+#and the marks on the slider as second output
+def get_image_timepoints(image_dict):
+    image_dict=json.loads(image_dict)
+    max_timepoint=len(image_dict.keys())-1
+    marks={}
+    for m in range(0, max_timepoint, 5):
+        marks.update({m:str(m)})
+    image_slider_output='Image{} selected'.format(image_dict)
+    return max_timepoint, marks, image_slider_output  
+#updating image graph
+@app.callback(Output('image-overlay', 'figure'),
+              [Input('image_slider', 'value')],
+              [State('image_list', 'children')])
+
+def update_image_graph(value, image_dict):
+    image_dict=json.loads(image_dict)
+    print(AD.take(5, image_dict.items()))
+    img=list(image_dict.keys())[value+1]
+    print(img)
+    #retrieving image shape from dictionary
+    x=image_dict['shape'][0]
+    y=image_dict['shape'][1]
+   
+# =============================================================================
+#     temp=Image.fromarray(img)
+#     temp.save('temp.png')
+# =============================================================================
+    
+    with open(img, 'rb') as f:
+        encoded=base64.b64encode(f.read())
+    print('encoding complete')
+
+    return GD.image_graph('data:image/png;base64,{}'.format(encoded.decode()), x_C=x, y_C=y, 
+                          X_S=image_dict[img][0], Y_S=image_dict[img][1])
 
 
 # =============================================================================

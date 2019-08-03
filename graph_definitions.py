@@ -58,7 +58,7 @@ def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_colum
         cells=list(dat_class[identifier_column].unique())
         print('...of class ', i, '...')
         if testmode==True:        
-            cells=cells[0:50]
+            cells=cells[50:100]
         #append the current classes name to the titles of the plot
 
 
@@ -95,7 +95,7 @@ def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_colum
 #%%
 def migration_distance(dat=[], classifier_column='', identifier_column='', timepoint_column='', data_column='', distance_filter='', testmode=False):
     if testmode==True:
-        dat=dat[0:1000]
+        dat=dat[1000:2000]
     print('creating migration boxplots')
     print('calculating distances...')
     #calculating the distances and persistence of migration
@@ -201,4 +201,46 @@ def time_series(dat=[], classifier_column='', identifier_column='', timepoint_co
   
 
     print('...done')
+    return fig
+
+#%%
+def image_graph(img, x_C=1024, y_C=1024, X_S=0, Y_S=0):
+    
+    aspect_ratio=x_C/y_C  
+    fig=go.Figure()
+    # Add invisible scatter trace.
+    # This trace is added to help the autoresize logic work.
+    fig.add_trace(
+        go.Scatter(
+            x=[0, x_C],
+            y=[0, y_C],
+            mode="markers",
+            marker_opacity=0
+        )
+            )
+    #add cell marker    
+    fig.add_trace(go.Scatter(
+            x=[X_S],
+            y=[abs(Y_S-y_C)],
+            mode='markers',
+            marker_opacity=1))
+    fig.update_layout(
+            images=[
+                    go.layout.Image(source=img,
+                                    xref='x',
+                                    yref='y',
+                                    x=0,
+                                    y=y_C,
+                                    
+                                    sizex=x_C,
+                                    sizey=y_C,
+                                    sizing='stretch',
+                                    opacity=1,
+                                    layer='below')],
+            height=750,
+            width=750*aspect_ratio)
+                  
+    fig.update_xaxes(visible=False, range=[0, x_C])
+    fig.update_yaxes(visible=False, range=[0, y_C])
+    print('image being displayed')
     return fig
