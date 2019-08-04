@@ -71,14 +71,14 @@ def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_colum
             #getting y values
             y=dat_class.loc[dat_class[identifier_column]==c][Y_column],
             #getting unique ID
-            hovertext=dat_class.loc[dat_class[identifier_column]==c][identifier_column]),
+            hovertext=dat_class.loc[dat_class[identifier_column]==c]['unique_time']),
 
             row=int(rowlist[math.floor(r_i)]) , col=1)
 
 
 
             
-        #adding 0.5 to the row indicator, so that every second class will be 
+        #adding 1 to the row indicator, so that every class will be 
         #plottet in a new row
         fig.update_yaxes(range=[min_y*1.05, max_y*1.05], row=int(rowlist[math.floor(r_i)]), col=1)
         fig.update_xaxes(range=[min_x*1.05, max_x*1.05], row=int(rowlist[math.floor(r_i)]), col=1)
@@ -198,16 +198,23 @@ def time_series(dat=[], classifier_column='', identifier_column='', timepoint_co
 
     fig.update_layout(margin={'l': 40, 'b': 5, 't': 30, 'r': 40},
             height=row_n*375, width=750)
-  
+    fig.update_layout({'clickmode':'event+select'})
+
 
     print('...done')
     return fig
 
 #%%
-def image_graph(img, x_C=1024, y_C=1024, X_S=0, Y_S=0):
+def image_graph(img, x_C=1024, y_C=1024, image_info=[0, 0, 0], ID=''):
     '''
     this graph is supposed to show an image an mark a point on it.
     '''
+    
+    print(image_info)
+    X_S=image_info[0]
+    Y_S=image_info[1]
+    
+    
     #calculate aspect ratio
     aspect_ratio=x_C/y_C  
     fig=go.Figure()
@@ -223,12 +230,25 @@ def image_graph(img, x_C=1024, y_C=1024, X_S=0, Y_S=0):
             )
     #add cell marker    
     fig.add_trace(go.Scatter(
+            hovertext=ID,
             x=[X_S],
             #images start with y0 at the top, graphs with y0 at the bottom
             y=[abs(Y_S-y_C)],
             mode='markers',
-            marker_opacity=1))
-    
+            marker_opacity=1,
+            ))
+    #displaying markers over all other tracked cells
+    for i in list(image_info[2]['alt_cells'].keys()):
+        fig.add_trace(go.Scatter(
+                hovertext=i,
+                x=[image_info[2]['alt_cells'][i][0]],
+                y=[abs((image_info[2]['alt_cells'][i][1]-y_C))],
+                mode='markers',
+                marker_opacity=0.5,
+                #marker_colour='rgba(0, 0, 255, .9)',
+                
+                )
+        )
     fig.update_layout(
             images=[
                     go.layout.Image(source=img,
@@ -249,6 +269,8 @@ def image_graph(img, x_C=1024, y_C=1024, X_S=0, Y_S=0):
                   
     fig.update_xaxes(visible=False, range=[0, x_C])
     fig.update_yaxes(visible=False, range=[0, y_C])
+    fig.update_layout({'clickmode':'event+select'})
+    
     print('image being displayed')
     return fig
 
@@ -262,4 +284,4 @@ def histogram(pixelcount):
                                xbins=dict(size=5)))
 
     return fig
-    
+#/Volumes/imaging.data/Max/REF52/beta_pix/pix_9/cp.out1/output/    

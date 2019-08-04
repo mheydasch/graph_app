@@ -107,6 +107,7 @@ app.layout = html.Div([
         MD.RadioItems(),
         html.P('Select the minimum track length'),
         MD.track_length_selector(),
+        #displays the number selected by track_length selector
         html.Div(id='track_length_output', style={'margin-top': 20} ),
         html.Div([
         html.Div([
@@ -455,10 +456,11 @@ def filter_graph(track_length_selector, flag_filter, flag_storage, identifier_se
                State('migration_data', 'clickData'),
                State('flag_options', 'value'),
                State('flag_filter', 'options'),
-               State('flag_storage', 'children')
+               State('flag_storage', 'children'),
+               State('image-overlay', 'click_data')
                ])
 def update_flags(n_clicks, identifier_selector, 
-                 track_comment, clickData, flag_options, flag_filter, flag_storage):
+                 track_comment, clickData, flag_options, flag_filter, flag_storage, image_overlay):
     print(track_comment)
     dff=df
     try: 
@@ -490,7 +492,7 @@ def update_flags(n_clicks, identifier_selector,
         #to all datapoints with that ID
         if flag_options=='all':
            print('all')
-           pattern=re.compile('_T.+')
+           pattern=re.compile('_T.*')
            try:
                ID=ID.replace(re.search(pattern, ID).group(),'')
                dff.loc[dff[identifier_selector]==ID, 'flags']=track_comment
@@ -617,26 +619,31 @@ def update_image_overlay(hoverData, image_dict, image_type, image_selector, shar
     #getting dimensions of image
     img_size=imageio.imread(image_dict[imagelist[0]]).shape
     #inidiate a dictionary to coordinates for images. Including image shape
-    loaded_dict={'shape':img_size}
+    loaded_dict={'shape':img_size, 'ID':ID_or}
     time_pattern=re.compile('_T+[0-9]*')
     timenumber_pattern=re.compile('[0-9]+')
    
     
     #getting part of the data that is from the current image
     #gets the image ID, something like  WB2_S1324_T1
-    Image_ID= imagelist[0].replace(re.search(track_pattern, imagelist[0]).group(), '')
+    print('imagelist[0]', imagelist[0])
+    Image_ID= imagelist[0]
+    print('Image_ID', Image_ID)
     #get the time, something like _T1
-    Time_ID= Image_ID.re_search(time_pattern.group())
+    Time_ID= re.search(time_pattern, Image_ID).group()
+    print('Time_ID', Time_ID)
     #get the ID only from the Site, something like WB2_S1324
     Site_ID= Image_ID.replace(Time_ID, '')
+    print('Site_ID', Site_ID)
     #gets part of the dataframe that is from the current image
     Site_data=data[data[identifier_selector].str.contains(Site_ID)]
     
+    #getting all the images for the respective timepoints
     for i in imagelist:
         #adding the unoque ID of the cell back into the key of the image
         #to get X, Y coordinates. Something like 'WB2_S1324_E4_T1'
         tracking_ID=i.replace(re.search('_T', i).group(), track_ID+'_T')
-        print('tracking_ID: ',tracking_ID)
+        #print('tracking_ID: ',tracking_ID)
         img=image_dict[i]
         try:
             x_coord=int(data[data['unique_time']==tracking_ID]['Location_Center_X'].values)
@@ -649,13 +656,14 @@ def update_image_overlay(hoverData, image_dict, image_type, image_selector, shar
         
         #getting part of the dataframe that is from the current timepoint as well
         #get the time, something like _T1
-        Time_ID= i.re_search(time_pattern.group())
+        Time_ID= re.search(time_pattern, i).group()
         #gets only the numeric value of the timepoint
         Time= re.search(timenumber_pattern, Time_ID).group()
         timepoint_data=Site_data[Site_data[timepoint_selector]==int(Time)]
         alt_img={}
         for index, row in timepoint_data.iterrows():
-            alt_img.update({row['unique_time']:[row['Location_Center_X'], row['Location_Center_Y']]})
+            if int(row['Location_Center_X'])!=x_coord:
+                alt_img.update({row['unique_time']:[int(row['Location_Center_X']), int(row['Location_Center_Y'])]})
             
         
         
@@ -672,11 +680,27 @@ def update_image_overlay(hoverData, image_dict, image_type, image_selector, shar
 
 #%% flagging framework
 @app.callback(Output('click-data', 'children'),
-              [Input('migration_data', 'clickData')])    
-def display_click_data(clickData):
+              [Input('migration_data', 'clickData'),
+               Input('image-overlay', 'clickData')],)    
+def display_click_data(clickData, image_overlay):
     '''getting click data from graph and displaying it
     '''
-    return json.dumps(clickData, indent=2)
+    ctx= dash.callback_context
+# =============================================================================
+#     if not ctx.triggered:
+#         button_id = 'No clicks yet'
+#     else:
+#         button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+#         print('button_id: ', button_id)
+#     print( 'triggered:', ctx.triggered[0])
+# =============================================================================
+    
+    if ctx.triggered[0]['prop_id']=='image-overlay.clickData':
+        data=image_overlay
+    if ctx.triggered[0]['prop_id']=='migration_data.clickData':
+        data=clickData
+    print(data)
+    return json.dumps(data, indent=2)
 
 
 
@@ -705,12 +729,13 @@ def get_image_timepoints(image_dict):
 def update_image_graph(value, image_dict):
     image_dict=json.loads(image_dict)
     print(AD.take(5, image_dict.items()))
-    img=list(image_dict.keys())[value+1]
+    img=list(image_dict.keys())[value+2]
     print(img)
     #retrieving image shape from dictionary
     x=image_dict['shape'][0]
     y=image_dict['shape'][1]
-    
+    #retrieving cell ID from dictionary
+    ID=image_dict['ID'] 
    
 # =============================================================================
 #     temp=Image.fromarray(img)
@@ -738,7 +763,7 @@ def update_image_graph(value, image_dict):
     #histogram framework end
 
     return GD.image_graph('data:image/png;base64,{}'.format(encoded.decode()), x_C=x, y_C=y, 
-                          X_S=image_dict[img][0], Y_S=image_dict[img][1]), #GD.histogram(pix_count)
+                          image_info=image_dict[img], ID=ID), #GD.histogram(pix_count)
 
 #%% Download csv file
 @app.callback(Output('download-link', 'href'),
