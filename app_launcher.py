@@ -210,7 +210,9 @@ app.layout = html.Div([
     html.Div(id='image_list', style={'display':'none'}),
     #holds graphs after they have been created for faster access
     html.Div(id='graph_storage', style={'display':'none'}),
-    html.Div(id='encoded_img_storage', style={'display':'none'})
+    html.Div(id='encoded_img_storage', style={'display':'none'}),
+    #stores raw click data to be retrieved by update_flags
+    html.Div(id='click_data_storage', style={'display':'none'})
 ])
     
 
@@ -457,10 +459,12 @@ def filter_graph(track_length_selector, flag_filter, flag_storage, identifier_se
                State('flag_options', 'value'),
                State('flag_filter', 'options'),
                State('flag_storage', 'children'),
-               State('image-overlay', 'click_data')
+               State('image-overlay', 'clickData'),
+               State('click-data', 'children'),
+               State('click_data_storage', 'children')
                ])
 def update_flags(n_clicks, identifier_selector, 
-                 track_comment, clickData, flag_options, flag_filter, flag_storage, image_overlay):
+                 track_comment, clickData, flag_options, flag_filter, flag_storage, image_overlay, clickchild, click_data_storage):
     print(track_comment)
     dff=df
     try: 
@@ -471,8 +475,16 @@ def update_flags(n_clicks, identifier_selector,
         print('flag_storage empty')
     
     #flagging framework
-    if clickData!=None:
-        print(clickData['points'][0]['hovertext'])
+    if click_data_storage!=None:
+        clickdata=click_data_storage
+        print('clickdata: ',clickdata)
+        
+        if 'customdata' in clickData['points'][0]:
+            ID=clickData['points'][0]['customdata']
+        if 'hovertext' in clickData['points'][0]: 
+            ID=clickData['points'][0]['hovertext']
+
+        print('ID: ', ID)
         #read previously filtered data frame
         #create a new column and fill it
         try:
@@ -481,7 +493,7 @@ def update_flags(n_clicks, identifier_selector,
             dff['flags']='None'
             print('flags resetted')
         #get the unique ID from the hovertext
-        ID=clickData['points'][0]['hovertext']
+        #ID=clickData['points'][0]['hovertext']
         
         #check flag options. If single, add the submitted comment only to 
         #the selected timepoint
@@ -489,7 +501,7 @@ def update_flags(n_clicks, identifier_selector,
             dff.loc[dff['unique_time']==ID, 'flags']=track_comment
             print('single')
         #if 'all' remove the timepoint component from the string and add the comment
-        #to all datapoints with that ID
+        #to all datapoints with that ID like 'WB2_S1324_E4'
         if flag_options=='all':
            print('all')
            pattern=re.compile('_T.*')
@@ -679,7 +691,8 @@ def update_image_overlay(hoverData, image_dict, image_type, image_selector, shar
     #return 'data:video/mp4;base64,{}'.format(temp_avi.decode()), ID_or
 
 #%% flagging framework
-@app.callback(Output('click-data', 'children'),
+@app.callback([Output('click-data', 'children'),
+              Output('click_data_storage', 'children')],
               [Input('migration_data', 'clickData'),
                Input('image-overlay', 'clickData')],)    
 def display_click_data(clickData, image_overlay):
@@ -693,6 +706,7 @@ def display_click_data(clickData, image_overlay):
 #         button_id = ctx.triggered[0]['prop_id'].split('.')[0]
 #         print('button_id: ', button_id)
 #     print( 'triggered:', ctx.triggered[0])
+#     print('triggered', ctx.triggered, 'states', ctx.states, 'inputs', ctx.inputs)
 # =============================================================================
     
     if ctx.triggered[0]['prop_id']=='image-overlay.clickData':
@@ -700,7 +714,7 @@ def display_click_data(clickData, image_overlay):
     if ctx.triggered[0]['prop_id']=='migration_data.clickData':
         data=clickData
     print(data)
-    return json.dumps(data, indent=2)
+    return json.dumps(data, indent=2), data
 
 
 

@@ -71,7 +71,8 @@ def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_colum
             #getting y values
             y=dat_class.loc[dat_class[identifier_column]==c][Y_column],
             #getting unique ID
-            hovertext=dat_class.loc[dat_class[identifier_column]==c]['unique_time']),
+            hovertext=dat_class.loc[dat_class[identifier_column]==c]['unique_time'],
+            customdata=[dat_class.loc[dat_class[identifier_column]==c]['unique_time']]),
 
             row=int(rowlist[math.floor(r_i)]) , col=1)
 
@@ -110,6 +111,7 @@ def migration_distance(dat=[], classifier_column='', identifier_column='', timep
         fig.append_trace(trace=go.Box(
         y=distances.loc[distances['Classifier']==i]['cumulative_distance'],
         hovertext=distances.loc[distances['Classifier']==i]['unique_time'],
+        customdata=[distances.loc[distances['Classifier']==i]['unique_time']],
 
         #x=[xpos],
         name=i,
@@ -122,6 +124,7 @@ def migration_distance(dat=[], classifier_column='', identifier_column='', timep
         fig.append_trace(trace=go.Box(
         y=distances.loc[distances['Classifier']==i]['persistence'],
         hovertext=distances.loc[distances['Classifier']==i]['unique_time'],
+        customdata=[distances.loc[distances['Classifier']==i]['unique_time']],
 
         #x=[xpos],
         name=i,
@@ -184,7 +187,8 @@ def time_series(dat=[], classifier_column='', identifier_column='', timepoint_co
             #getting y values
             y=dat_class.loc[dat_class[identifier_column]==c][Y_column],
             #getting unique ID
-            hovertext=dat_class.loc[dat_class[identifier_column]==c]['unique_time']),
+            hovertext=dat_class.loc[dat_class[identifier_column]==c]['unique_time'],
+            customdata=[dat_class.loc[dat_class[identifier_column]==c]['unique_time']]),
 
             row=int(rowlist[math.floor(r_i)]) , col=1)
     
@@ -231,6 +235,7 @@ def image_graph(img, x_C=1024, y_C=1024, image_info=[0, 0, 0], ID=''):
     #add cell marker    
     fig.add_trace(go.Scatter(
             hovertext=ID,
+            customdata=[ID],
             x=[X_S],
             #images start with y0 at the top, graphs with y0 at the bottom
             y=[abs(Y_S-y_C)],
@@ -241,6 +246,7 @@ def image_graph(img, x_C=1024, y_C=1024, image_info=[0, 0, 0], ID=''):
     for i in list(image_info[2]['alt_cells'].keys()):
         fig.add_trace(go.Scatter(
                 hovertext=i,
+                customdata=[i],
                 x=[image_info[2]['alt_cells'][i][0]],
                 y=[abs((image_info[2]['alt_cells'][i][1]-y_C))],
                 mode='markers',
