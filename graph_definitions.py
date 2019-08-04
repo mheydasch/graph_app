@@ -251,3 +251,15 @@ def image_graph(img, x_C=1024, y_C=1024, X_S=0, Y_S=0):
     fig.update_yaxes(visible=False, range=[0, y_C])
     print('image being displayed')
     return fig
+
+def histogram(pixelcount):
+    '''
+    displays the histogram of the current image
+    '''
+
+    fig=go.Figure()
+    fig.add_trace(go.Histogram(x=pixelcount,
+                               xbins=dict(size=5)))
+
+    return fig
+    

@@ -152,6 +152,7 @@ app.layout = html.Div([
                                                MD.image_slider(),
                                                
                                                html.Div(id='image_slider_output', style={'margin-top': 20},),
+                                               dcc.Graph(id='histogram'),
                                                html.Img(id='test_image',
                                                         style={
                                                             'height': '75%',
@@ -559,8 +560,11 @@ def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice,
               [State('image_list','component'),
                State('image_type', 'children'),
                State('Image_selector', 'value'),
-               State('shared_data', 'children')])
-def update_image_overlay(hoverData, image_dict, image_type, image_selector, shared_data):
+               State('shared_data', 'children'),
+               State('identifier_selector', 'value'),
+               State('timepoint_selector', 'value')])
+def update_image_overlay(hoverData, image_dict, image_type, image_selector, shared_data, 
+                         identifier_selector, timepoint_selector):
     #start_time=time.time()
     #Error message if no images have been uploaded
     if len(image_dict)==0:
@@ -614,6 +618,20 @@ def update_image_overlay(hoverData, image_dict, image_type, image_selector, shar
     img_size=imageio.imread(image_dict[imagelist[0]]).shape
     #inidiate a dictionary to coordinates for images. Including image shape
     loaded_dict={'shape':img_size}
+    time_pattern=re.compile('_T+[0-9]*')
+    timenumber_pattern=re.compile('[0-9]+')
+   
+    
+    #getting part of the data that is from the current image
+    #gets the image ID, something like  WB2_S1324_T1
+    Image_ID= imagelist[0].replace(re.search(track_pattern, imagelist[0]).group(), '')
+    #get the time, something like _T1
+    Time_ID= Image_ID.re_search(time_pattern.group())
+    #get the ID only from the Site, something like WB2_S1324
+    Site_ID= Image_ID.replace(Time_ID, '')
+    #gets part of the dataframe that is from the current image
+    Site_data=data[data[identifier_selector].str.contains(Site_ID)]
+    
     for i in imagelist:
         #adding the unoque ID of the cell back into the key of the image
         #to get X, Y coordinates. Something like 'WB2_S1324_E4_T1'
@@ -628,9 +646,26 @@ def update_image_overlay(hoverData, image_dict, image_type, image_selector, shar
         except TypeError:
             print('no segmentation found for', i)
         
-        loaded_dict.update({img:[x_coord, y_coord]})
-    print(type(loaded_dict))
-    print(loaded_dict)    
+        
+        #getting part of the dataframe that is from the current timepoint as well
+        #get the time, something like _T1
+        Time_ID= i.re_search(time_pattern.group())
+        #gets only the numeric value of the timepoint
+        Time= re.search(timenumber_pattern, Time_ID).group()
+        timepoint_data=Site_data[Site_data[timepoint_selector]==int(Time)]
+        alt_img={}
+        for index, row in timepoint_data.iterrows():
+            alt_img.update({row['unique_time']:[row['Location_Center_X'], row['Location_Center_Y']]})
+            
+        
+        
+        
+        
+        
+        
+        loaded_dict.update({img:[x_coord, y_coord, {'alt_cells': alt_img}]})
+ 
+    print(AD.take(5, loaded_dict.items())) 
     print('encoding complete')
     return json.dumps(loaded_dict), ID_or
     #return 'data:video/mp4;base64,{}'.format(temp_avi.decode()), ID_or
@@ -662,7 +697,8 @@ def get_image_timepoints(image_dict):
     image_slider_output='Image{} selected'.format(image_dict)
     return max_timepoint, marks, image_slider_output  
 #updating image graph
-@app.callback(Output('image-overlay', 'figure'),
+@app.callback([Output('image-overlay', 'figure')],
+              #Output('histogram', 'figure')],
               [Input('image_slider', 'value')],
               [State('image_list', 'children')])
 
@@ -674,6 +710,7 @@ def update_image_graph(value, image_dict):
     #retrieving image shape from dictionary
     x=image_dict['shape'][0]
     y=image_dict['shape'][1]
+    
    
 # =============================================================================
 #     temp=Image.fromarray(img)
@@ -683,9 +720,25 @@ def update_image_graph(value, image_dict):
     with open(img, 'rb') as f:
         encoded=base64.b64encode(f.read())
     print('encoding complete')
+    
+    #histogram framework
+    #pixel_dict={}
+    imgy=Image.open(img, 'r')
+    pix_val=list(imgy.getdata())
+    #pix_val_flat = [x for sets in pix_val for x in sets]
+    #excluding zeros
+    pix_count=[x for sets in pix_val for x in sets if x>0]
+# =============================================================================
+#     for i in pix_val_flat:
+#         if i in pixel_dict.keys():
+#             pixel_dict[i]+=1
+#         else:
+#          pixel_dict.update({i:1})    
+# =============================================================================
+    #histogram framework end
 
     return GD.image_graph('data:image/png;base64,{}'.format(encoded.decode()), x_C=x, y_C=y, 
-                          X_S=image_dict[img][0], Y_S=image_dict[img][1])
+                          X_S=image_dict[img][0], Y_S=image_dict[img][1]), #GD.histogram(pix_count)
 
 #%% Download csv file
 @app.callback(Output('download-link', 'href'),
@@ -701,7 +754,9 @@ def update_download_link(shared_data):
     except Exception as e:
         print(e)
     return csv_string
-    
+
+
+         
 # =============================================================================
 # @app.callback(Output('shared_data2', 'children'),
 #                 [Input('comment_submit', 'n_clicks')],
