@@ -459,12 +459,11 @@ def filter_graph(track_length_selector, flag_filter, flag_storage, identifier_se
                State('flag_options', 'value'),
                State('flag_filter', 'options'),
                State('flag_storage', 'children'),
-               State('image-overlay', 'clickData'),
-               State('click-data', 'children'),
+
                State('click_data_storage', 'children')
                ])
 def update_flags(n_clicks, identifier_selector, 
-                 track_comment, clickData, flag_options, flag_filter, flag_storage, image_overlay, clickchild, click_data_storage):
+                 track_comment, clickData, flag_options, flag_filter, flag_storage, click_data_storage):
     print(track_comment)
     dff=df
     try: 
@@ -476,13 +475,13 @@ def update_flags(n_clicks, identifier_selector,
     
     #flagging framework
     if click_data_storage!=None:
-        clickdata=click_data_storage
-        print('clickdata: ',clickdata)
         
-        if 'customdata' in clickData['points'][0]:
-            ID=clickData['points'][0]['customdata']
-        if 'hovertext' in clickData['points'][0]: 
-            ID=clickData['points'][0]['hovertext']
+        print('clickdata: ',click_data_storage)
+        
+        if 'customdata' in click_data_storage['points'][0]:
+            ID=click_data_storage['points'][0]['customdata']
+        if 'hovertext' in click_data_storage['points'][0]: 
+            ID=click_data_storage['points'][0]['hovertext']
 
         print('ID: ', ID)
         #read previously filtered data frame
