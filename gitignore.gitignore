@@ -1,9 +1,12 @@
-.DS_store
+# Don't track content of these folders
+__pycache__/
+.DS_store/
+
+# Compiled source #
+###################
 
 *.png
-
 *.tiff
-
 *.tif
+*.html
 
-__pycache__

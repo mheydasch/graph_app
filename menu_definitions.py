@@ -164,6 +164,14 @@ def data_selector(df):
             options=data_options,
             multi=True,
             value=['Location_Center_X_Zeroed', 'Location_Center_Y_Zeroed'])
+def coordinate_selector(df):
+    columns=df.columns
+    data_options= [{'label' :k, 'value' :k} for k in columns]
+    return dcc.Dropdown(
+            id='coordinate_selector',
+            options=data_options,
+            multi=True,
+            value=['Location_Center_X', 'Location_Center_Y'])
 
 def save_button():
     return html.Button(id='save_df', n_clicks=0, children='Download datatable', style={'display':'none'})

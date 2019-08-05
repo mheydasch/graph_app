@@ -97,6 +97,8 @@ app.layout = html.Div([
         MD.datatype_selector(),
         html.P('Select the columns that hold your data, if x,y coordinates, first selected is treated as x coordinate:'),
         MD.data_selector(df),
+        html.P('Select the column holding your not normalized x,y coordinates'),
+        MD.coordinate_selector(df),
         html.P('Select the column which holds the classifier of your groups:'),        
         MD.classifier_choice(df),
         html.P('Select the column which holds the identifier for each unique item:'),
@@ -389,7 +391,8 @@ def display_image(component, filename):
                Output('identifier_selector', 'options'),
                Output('timepoint_selector', 'options'),
                Output('data_selector', 'options'),
-               Output('unique_time_selector', 'options'),],
+               Output('unique_time_selector', 'options'),
+               Output('coordinate_selector', 'options')],
               [Input('output-data-upload', 'children')])
 
 def update_dropdown(contents):
@@ -399,9 +402,10 @@ def update_dropdown(contents):
     timepoint_cols=col_labels
     data_cols=col_labels
     unique_time_columns=col_labels
+    coordinates=col_labels
     #print(col_labels)
 
-    return col_labels, identifier_cols, timepoint_cols, data_cols, unique_time_columns
+    return col_labels, identifier_cols, timepoint_cols, data_cols, unique_time_columns, coordinates
 
 #is called once you select a column from the timepoint_selector dropdown menu
 # =============================================================================
@@ -578,7 +582,7 @@ def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice,
         fig=graph_options[graph_selector](dat=dff, classifier_column=classifier_choice, 
                             identifier_column=identifier_selector,
                             timepoint_column=timepoint_selector, data_column=data_selector, 
-                            distance_filter=distance_filter, unique_time_selector=unique_time_selector, testmode=False)
+                            distance_filter=distance_filter, unique_time_selector=unique_time_selector, testmode=True)
         graph_storage.update({graph_selector:fig})
         return fig, graph_storage
 
@@ -592,9 +596,11 @@ def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice,
                State('shared_data', 'children'),
                State('identifier_selector', 'value'),
                State('timepoint_selector', 'value'),
-               State('unique_time_selector', 'value')])
+               State('unique_time_selector', 'value'),
+               State('coordinate_selector', 'value')])
 def update_image_overlay(hoverData, image_dict, image_type, image_selector, shared_data, 
-                         identifier_selector, timepoint_selector, unique_time_selector):
+                         identifier_selector, timepoint_selector, unique_time_selector,
+                         coordinate_selector):
     #start_time=time.time()
     #Error message if no images have been uploaded
     if len(image_dict)==0:
@@ -674,8 +680,8 @@ def update_image_overlay(hoverData, image_dict, image_type, image_selector, shar
         #print('tracking_ID: ',tracking_ID)
         img=image_dict[i]
         try:
-            x_coord=int(data[data[unique_time_selector]==tracking_ID]['Location_Center_X'].values)
-            y_coord=int(data[data[unique_time_selector]==tracking_ID]['Location_Center_Y'].values)
+            x_coord=int(data[data[unique_time_selector]==tracking_ID][coordinate_selector[0]].values)
+            y_coord=int(data[data[unique_time_selector]==tracking_ID][coordinate_selector[1]].values)
             #img[y_coord-5:y_coord+5, x_coord-5:x_coord+5]=[255, 0, 0]
        #if no data for timepoint is found print error message
         except TypeError:
@@ -692,8 +698,8 @@ def update_image_overlay(hoverData, image_dict, image_type, image_selector, shar
         timepoint_data=Site_data[Site_data[timepoint_selector]==int(Time)]
         alt_img={}
         for index, row in timepoint_data.iterrows():
-            if int(row['Location_Center_X'])!=x_coord:
-                alt_img.update({row[unique_time_selector]:[int(row['Location_Center_X']), int(row['Location_Center_Y'])]})
+            if int(row[coordinate_selector[0]])!=x_coord:
+                alt_img.update({row[unique_time_selector]:[int(row[coordinate_selector[0]]), int(row[coordinate_selector[1]])]})
             
         
         
