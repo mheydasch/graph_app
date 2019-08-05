@@ -12,7 +12,7 @@ Holds the graph definitions for the app.
 #import plotly.chart_studio as py
 import chart_studio.plotly
 import plotly.graph_objects as go
-from plotly import tools
+
 from plotly.subplots import make_subplots
 import os
 import sys
@@ -20,8 +20,7 @@ import math
 import numpy as np
 sys.path.append(os.path.realpath(__file__))
 import algorythm_definitions as AD
-from PIL import Image
-from PIL import ImageEnhance
+
 #%% Plots for the plot dictionary, that are based on data
 def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_column='',
              data_column='', distance_filter='', unique_time_selector='', testmode=False):
@@ -205,7 +204,7 @@ def time_series(dat=[], classifier_column='', identifier_column='',
 
         fig.update_yaxes(range=[min_y*1.05, max_y*1.05], row=int(rowlist[math.floor(r_i)]), col=1)
         fig.update_xaxes(range=[min_x*1.05, max_x*1.05], row=int(rowlist[math.floor(r_i)]), col=1)    
-        #adding 0.5 to the row indicator, so that every second class will be 
+        #adding 1 to the row indicator, so that every class will be 
         #plottet in a new row
         r_i+=1
 
@@ -221,10 +220,7 @@ def time_series(dat=[], classifier_column='', identifier_column='',
 def image_graph(img, x_C=1024, y_C=1024, image_info=[0, 0, 0], ID=''):
     '''
     this graph is supposed to show an image an mark a point on it.
-    '''
-
-
-    
+    '''    
     #print(image_info)
     X_S=image_info[0]
     Y_S=image_info[1]

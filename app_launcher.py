@@ -8,11 +8,8 @@ Created on Mon Jul  1 13:11:11 2019
 import base64
 import datetime
 import io
-import time
-import numpy as np
 from PIL import Image
 from PIL import ImageEnhance
-import cv2
 import urllib.parse
 
 import dash
@@ -21,7 +18,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 import imageio
 import json
-import flask
+
 from natsort import natsorted
 #from flask_caching import Cache
 
