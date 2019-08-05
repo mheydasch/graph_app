@@ -130,7 +130,7 @@ app.layout = html.Div([
              dcc.Tab(label='Table', 
                      children= [html.Table(id='output-data-upload'),
 
-                                            MD.save_button()]),
+                                            ]),
                      #calling the table
                              
              dcc.Tab(label='Graph',
@@ -149,21 +149,7 @@ app.layout = html.Div([
                                                html.Div(id='image_slider_output', style={'margin-top': 20},),
                                                html.P('Adjust the brightness of the image'),
                                                MD.brightness_slider(),
-                                               #dcc.Graph(id='histogram'),
-                                               html.Img(id='test_image',
-                                                        style={
-                                                            'height': '75%',
-                                                            'width': '75%',
-                                                            'float': 'fixed',
-                                                            'position': 'relative',
-                                                            'margin-top': 20,
-                                                            'margin-right': 20,
-                                                            
-                                                                }
-                                                        
-                                                        ),
-                                               html.Div(id='image_name',
-                                                        ),
+
                                                html.Div([
                                                     dcc.Markdown(("""
                                                         **Click Data**
@@ -202,7 +188,6 @@ app.layout = html.Div([
 
 
 
-    html.Div(id='output-image-upload', style={'display':'none'}),
      #hidden divs for storing data
     #holds the dataframe after filtering by track length
     html.Div(id='shared_data', style={'display':'none'}),
@@ -218,10 +203,6 @@ app.layout = html.Div([
     html.Div(id='click_data_storage', style={'display':'none'})
 ])
     
-
-#%%layouts
-#table layout
-
 
 
 #%% upload function
@@ -532,8 +513,7 @@ def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice,
         return fig, graph_storage
 
 #%% atm changing to click data showing full video 
-@app.callback([Output('image_list', 'children'),
-               Output('image_name', 'children')],
+@app.callback(Output('image_list', 'children'),
               [Input('migration_data', 'clickData')],
               [State('image_list','component'),
                State('image_type', 'children'),
@@ -649,7 +629,7 @@ def update_image_overlay(hoverData, image_dict, image_type, shared_data,
  
     print(AD.take(5, loaded_dict.items())) 
     print('encoding complete')
-    return json.dumps(loaded_dict), ID_or
+    return json.dumps(loaded_dict)
 
 #%% flagging framework
 @app.callback([Output('click-data', 'children'),
