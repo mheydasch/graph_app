@@ -555,16 +555,22 @@ def update_flags(n_clicks, identifier_selector,
                State('graph_storage', 'component'),
                State('graph_reuse', 'value'),
                State('flag_filter', 'value'),
-               State('unique_time_selector', 'value')])
+               State('unique_time_selector', 'value'),
+               State('flag_storage', 'value')])
 
 def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice,
                identifier_selector, timepoint_selector, data_selector, distance_filter, 
-               graph_storage, graph_reuse, flag_filter, unique_time_selector):
+               graph_storage, graph_reuse, flag_filter, unique_time_selector, flag_storage):
     #if the graph storage is empty an empty dictionary will be created
     if graph_storage==None or graph_reuse=='no':
         graph_storage={}
     #data is read from the shared data div
     dff=pd.read_json(shared_data, orient='split')
+    #try to read flag sotrage. more elegant conditioning required here in the future
+    try:
+        dff=pd.read_json(flag_storage, orient='split')
+    except:
+        pass
     print(flag_filter)
     print(type(flag_filter))
     
