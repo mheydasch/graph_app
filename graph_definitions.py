@@ -20,6 +20,8 @@ import math
 import numpy as np
 sys.path.append(os.path.realpath(__file__))
 import algorythm_definitions as AD
+from PIL import Image
+from PIL import ImageEnhance
 #%%
 def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_column='', data_column='', distance_filter='', testmode=False):
     '''
@@ -213,8 +215,10 @@ def image_graph(img, x_C=1024, y_C=1024, image_info=[0, 0, 0], ID=''):
     '''
     this graph is supposed to show an image an mark a point on it.
     '''
+
+
     
-    print(image_info)
+    #print(image_info)
     X_S=image_info[0]
     Y_S=image_info[1]
     

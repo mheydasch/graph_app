@@ -11,6 +11,7 @@ import io
 import time
 import numpy as np
 from PIL import Image
+from PIL import ImageEnhance
 import cv2
 import urllib.parse
 
@@ -153,7 +154,8 @@ app.layout = html.Div([
                                                MD.image_slider(),
                                                
                                                html.Div(id='image_slider_output', style={'margin-top': 20},),
-                                               dcc.Graph(id='histogram'),
+                                               MD.brightness_slider(),
+                                               #dcc.Graph(id='histogram'),
                                                html.Img(id='test_image',
                                                         style={
                                                             'height': '75%',
@@ -736,10 +738,21 @@ def get_image_timepoints(image_dict):
 #updating image graph
 @app.callback([Output('image-overlay', 'figure')],
               #Output('histogram', 'figure')],
-              [Input('image_slider', 'value')],
+              [Input('image_slider', 'value'),
+               Input('brightness_slider', 'value')],
               [State('image_list', 'children')])
 
-def update_image_graph(value, image_dict):
+def update_image_graph(value, image_dict, brightness):
+    '''
+    Calls the graph for image display
+    Gets the image list from update_image_overlay.
+    Based on the value of the image slider it selects an image from
+    the dictionary and calls the graph with that image, including
+    the X,Y coordinates of all cells in that image 
+    It also gets a value from 0-2 from the brightness slider, and adjusts the
+    brightness of the image accordingly.
+    '''
+    
     image_dict=json.loads(image_dict)
     print(AD.take(5, image_dict.items()))
     img=list(image_dict.keys())[value+2]
@@ -749,23 +762,28 @@ def update_image_graph(value, image_dict):
     y=image_dict['shape'][1]
     #retrieving cell ID from dictionary
     ID=image_dict['ID'] 
-   
-# =============================================================================
-#     temp=Image.fromarray(img)
-#     temp.save('temp.png')
-# =============================================================================
     
-    with open(img, 'rb') as f:
+    #adjust the brightness of the image.
+    image=Image.open(img)
+    enhancer_object = ImageEnhance.Brightness(image)
+    image = enhancer_object.enhance(brightness)
+    #saving and opening
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    img_path=os.path.join(dir_path, 'temp.png')
+    image.save(img_path)
+   
+    
+    with open(img_path, 'rb') as f:
         encoded=base64.b64encode(f.read())
     print('encoding complete')
     
     #histogram framework
     #pixel_dict={}
-    imgy=Image.open(img, 'r')
-    pix_val=list(imgy.getdata())
+    #imgy=Image.open(img, 'r')
+    #pix_val=list(imgy.getdata())
     #pix_val_flat = [x for sets in pix_val for x in sets]
     #excluding zeros
-    pix_count=[x for sets in pix_val for x in sets if x>0]
+    #pix_count=[x for sets in pix_val for x in sets if x>0]
 # =============================================================================
 #     for i in pix_val_flat:
 #         if i in pixel_dict.keys():
@@ -776,7 +794,7 @@ def update_image_graph(value, image_dict):
     #histogram framework end
 
     return GD.image_graph('data:image/png;base64,{}'.format(encoded.decode()), x_C=x, y_C=y, 
-                          image_info=image_dict[img], ID=ID), #GD.histogram(pix_count)
+                          image_info=image_dict[img], ID=ID, ), #GD.histogram(pix_count)
 
 #%% Download csv file
 @app.callback(Output('download-link', 'href'),
