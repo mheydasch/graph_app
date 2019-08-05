@@ -739,8 +739,9 @@ def get_image_timepoints(image_dict):
 @app.callback([Output('image-overlay', 'figure')],
               #Output('histogram', 'figure')],
               [Input('image_slider', 'value'),
-               Input('brightness_slider', 'value')],
-              [State('image_list', 'children')])
+               ],
+              [State('image_list', 'children'),
+               State('brightness_slider', 'value')])
 
 def update_image_graph(value, image_dict, brightness):
     '''
