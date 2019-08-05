@@ -20,7 +20,6 @@ import imageio
 import json
 
 from natsort import natsorted
-#from flask_caching import Cache
 
 import pandas as pd
 import sys
@@ -206,11 +205,12 @@ app.layout = html.Div([
                     
 
 
-#html.Img(id='test_image')
 
     html.Div(id='output-image-upload', style={'display':'none'}),
      #hidden divs for storing data
+    #holds the dataframe after filtering by track length
     html.Div(id='shared_data', style={'display':'none'}),
+    #holds the unfiltered dataframe with user added flags
     html.Div(id='flag_storage', style={'display':'none'}),
     #holding the type of the uploaded images
     html.Div(id='image_type', style={'display':'none'}),
