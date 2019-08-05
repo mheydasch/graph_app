@@ -91,6 +91,17 @@ def identifier_selector(df):
             options=identifieroptions,
             placeholder='select the identifier column',
             value='unique_id')
+def unique_time_selector(df):    
+    '''
+    dropdown menu to select which column contains the information about timepoints
+    '''
+    columns=df.columns
+    timepointoptions= [{'label' :k, 'value' :k} for k in columns]
+    return dcc.Dropdown(
+            id='unique_time_selector',
+            options=timepointoptions,
+            placeholder='select a column where the value is unique for timepoint and cell',
+            value='unique_time')
    
 def timepoint_selector(df):    
     '''

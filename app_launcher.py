@@ -97,12 +97,17 @@ app.layout = html.Div([
         MD.datatype_selector(),
         html.P('Select the columns that hold your data, if x,y coordinates, first selected is treated as x coordinate:'),
         MD.data_selector(df),
-        html.P('Select the column which holds the classifier of your groups:'),
+        html.P('Select the column which holds the classifier of your groups:'),        
         MD.classifier_choice(df),
         html.P('Select the column which holds the identifier for each unique item:'),
         MD.identifier_selector(df),
+        html.P('Select  a column with format \'Wellname_Sitename_TrackID_Timepoint\''),
+        MD.unique_time_selector(df),        
         html.P('Select the column which holds the timepoints:'),
         MD.timepoint_selector(df)], className= 'six columns'),
+
+
+    
     
         html.Div([dcc.Markdown('''**Data filtering**'''), 
         MD.RadioItems(),
@@ -382,7 +387,8 @@ def display_image(component, filename):
 @app.callback([Output('classifier_choice', 'options'),
                Output('identifier_selector', 'options'),
                Output('timepoint_selector', 'options'),
-               Output('data_selector', 'options'),],
+               Output('data_selector', 'options'),
+               Output('unique_time_selector', 'options'),],
               [Input('output-data-upload', 'children')])
 
 def update_dropdown(contents):
@@ -391,9 +397,10 @@ def update_dropdown(contents):
     identifier_cols=col_labels
     timepoint_cols=col_labels
     data_cols=col_labels
+    unique_time_columns=col_labels
     #print(col_labels)
 
-    return col_labels, identifier_cols, timepoint_cols, data_cols
+    return col_labels, identifier_cols, timepoint_cols, data_cols, unique_time_columns
 
 #is called once you select a column from the timepoint_selector dropdown menu
 # =============================================================================
@@ -464,11 +471,12 @@ def filter_graph(track_length_selector, flag_filter, flag_storage, identifier_se
                State('flag_options', 'value'),
                State('flag_filter', 'options'),
                State('flag_storage', 'children'),
-
-               State('click_data_storage', 'children')
+               State('click_data_storage', 'children'),
+               State('unique_time_selector', 'value')
                ])
 def update_flags(n_clicks, identifier_selector, 
-                 track_comment, clickData, flag_options, flag_filter, flag_storage, click_data_storage):
+                 track_comment, clickData, flag_options, flag_filter, 
+                 flag_storage, click_data_storage, unique_time_selector):
     print(track_comment)
     dff=df
     try: 
@@ -502,7 +510,7 @@ def update_flags(n_clicks, identifier_selector,
         #check flag options. If single, add the submitted comment only to 
         #the selected timepoint
         if flag_options=='single':
-            dff.loc[dff['unique_time']==ID, 'flags']=track_comment
+            dff.loc[dff[unique_time_selector]==ID, 'flags']=track_comment
             print('single')
         #if 'all' remove the timepoint component from the string and add the comment
         #to all datapoints with that ID like 'WB2_S1324_E4'
@@ -541,11 +549,12 @@ def update_flags(n_clicks, identifier_selector,
                State('distance_filter', 'value'),
                State('graph_storage', 'component'),
                State('graph_reuse', 'value'),
-               State('flag_filter', 'value')])
+               State('flag_filter', 'value'),
+               State('unique_time_selector', 'value')])
 
 def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice,
                identifier_selector, timepoint_selector, data_selector, distance_filter, 
-               graph_storage, graph_reuse, flag_filter):
+               graph_storage, graph_reuse, flag_filter, unique_time_selector):
     #if the graph storage is empty an empty dictionary will be created
     if graph_storage==None or graph_reuse=='no':
         graph_storage={}
@@ -567,7 +576,8 @@ def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice,
         graph_options={'lineplot':GD.lineplot, 'migration_distance':GD.migration_distance, 'time_series':GD.time_series}
         fig=graph_options[graph_selector](dat=dff, classifier_column=classifier_choice, 
                             identifier_column=identifier_selector,
-                            timepoint_column=timepoint_selector, data_column=data_selector, distance_filter=distance_filter, testmode=True)
+                            timepoint_column=timepoint_selector, data_column=data_selector, 
+                            distance_filter=distance_filter, unique_time_selector=unique_time_selector, testmode=True)
         graph_storage.update({graph_selector:fig})
         return fig, graph_storage
 
@@ -580,9 +590,10 @@ def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice,
                State('Image_selector', 'value'),
                State('shared_data', 'children'),
                State('identifier_selector', 'value'),
-               State('timepoint_selector', 'value')])
+               State('timepoint_selector', 'value'),
+               State('unique_time_selector', 'value')])
 def update_image_overlay(hoverData, image_dict, image_type, image_selector, shared_data, 
-                         identifier_selector, timepoint_selector):
+                         identifier_selector, timepoint_selector, unique_time_selector):
     #start_time=time.time()
     #Error message if no images have been uploaded
     if len(image_dict)==0:
@@ -662,8 +673,8 @@ def update_image_overlay(hoverData, image_dict, image_type, image_selector, shar
         #print('tracking_ID: ',tracking_ID)
         img=image_dict[i]
         try:
-            x_coord=int(data[data['unique_time']==tracking_ID]['Location_Center_X'].values)
-            y_coord=int(data[data['unique_time']==tracking_ID]['Location_Center_Y'].values)
+            x_coord=int(data[data[unique_time_selector]==tracking_ID]['Location_Center_X'].values)
+            y_coord=int(data[data[unique_time_selector]==tracking_ID]['Location_Center_Y'].values)
             #img[y_coord-5:y_coord+5, x_coord-5:x_coord+5]=[255, 0, 0]
        #if no data for timepoint is found print error message
         except TypeError:
@@ -679,7 +690,7 @@ def update_image_overlay(hoverData, image_dict, image_type, image_selector, shar
         alt_img={}
         for index, row in timepoint_data.iterrows():
             if int(row['Location_Center_X'])!=x_coord:
-                alt_img.update({row['unique_time']:[int(row['Location_Center_X']), int(row['Location_Center_Y'])]})
+                alt_img.update({row[unique_time_selector]:[int(row['Location_Center_X']), int(row['Location_Center_Y'])]})
             
         
         

@@ -15,7 +15,9 @@ from itertools import islice
 def take(n, iterable):
     "Return first n items of the iterable as a list"
     return list(islice(iterable, n))
-def calc_dist(dat=[], classifier_column='Classifier', identifier_column='unique_id', timepoint_column='Metadata_Timepoint', data_column=['Location_Center_X_Zeroed','Location_Center_Y_Zeroed']):
+def calc_dist(dat=[], classifier_column='Classifier', identifier_column='unique_id', 
+              timepoint_column='Metadata_Timepoint', unique_time_selector='unique_time',
+              data_column=['Location_Center_X_Zeroed','Location_Center_Y_Zeroed']):
     l=[]
     cells=list(dat[identifier_column].unique())
     #looping through each unique cell
@@ -40,7 +42,9 @@ def calc_dist(dat=[], classifier_column='Classifier', identifier_column='unique_
         net_distance=np.sqrt((single_track[X_column].iloc[-1]-
                                 single_track[Y_column].iloc[0])**2)
         #adding the calculated values to a dictionary
-        temp={'unique_id':n, 'cumulative_distance':cumulative_distance, 'net_distance':net_distance, 'Classifier':single_track.loc[0][classifier_column], 'unique_time':single_track.loc[0]['unique_time']}
+        temp={'unique_id':n, 'cumulative_distance':cumulative_distance, 
+              'net_distance':net_distance, 'Classifier':single_track.loc[0][classifier_column],
+              '{}'.format(unique_time_selector):single_track.loc[0][unique_time_selector]}
         #appending the dictionary to a list to keep it over the loops
         l.append(temp)
     

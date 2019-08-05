@@ -23,7 +23,8 @@ import algorythm_definitions as AD
 from PIL import Image
 from PIL import ImageEnhance
 #%% Plots for the plot dictionary, that are based on data
-def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_column='', data_column='', distance_filter='', testmode=False):
+def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_column='',
+             data_column='', distance_filter='', unique_time_selector='', testmode=False):
     '''
     testmode: If testomde is set to True only the first 10 items will be used in the graph
     '''    
@@ -31,7 +32,7 @@ def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_colum
     print(identifier_column)
     print(type(identifier_column))
     #cells=list(dat[identifier_column].unique())
-    dat['unique_time']=dat[identifier_column]+'_T'+dat[timepoint_column].astype('str')
+    dat[unique_time_selector]=dat[identifier_column]+'_T'+dat[timepoint_column].astype('str')
 
     classes=list(dat[classifier_column].unique())
     X_column=data_column[0]
@@ -73,8 +74,8 @@ def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_colum
             #getting y values
             y=dat_class.loc[dat_class[identifier_column]==c][Y_column],
             #getting unique ID
-            hovertext=dat_class.loc[dat_class[identifier_column]==c]['unique_time'],
-            customdata=[dat_class.loc[dat_class[identifier_column]==c]['unique_time']]),
+            hovertext=dat_class.loc[dat_class[identifier_column]==c][unique_time_selector],
+            customdata=[dat_class.loc[dat_class[identifier_column]==c][unique_time_selector]]),
 
             row=int(rowlist[math.floor(r_i)]) , col=1)
 
@@ -96,13 +97,17 @@ def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_colum
         
     return fig
 
-def migration_distance(dat=[], classifier_column='', identifier_column='', timepoint_column='', data_column='', distance_filter='', testmode=False):
+def migration_distance(dat=[], classifier_column='', identifier_column='', 
+                       timepoint_column='', data_column='', distance_filter='', 
+                       unique_time_selector='', testmode=False):
     if testmode==True:
         dat=dat[500:10000]
     print('creating migration boxplots')
     print('calculating distances...')
     #calculating the distances and persistence of migration
-    distances=AD.calc_dist(dat=dat, classifier_column=classifier_column, identifier_column=identifier_column, timepoint_column=timepoint_column, data_column=data_column)
+    distances=AD.calc_dist(dat=dat, classifier_column=classifier_column, 
+                           identifier_column=identifier_column, timepoint_column=timepoint_column,
+                           data_column=data_column, unique_time_selector=unique_time_selector)
     #filtering the distances by a minimum cumulative distance
     distances=distances[distances['cumulative_distance']>distance_filter]
     print('...done calculating')
@@ -112,8 +117,8 @@ def migration_distance(dat=[], classifier_column='', identifier_column='', timep
     for xpos, i in enumerate(classes):
         fig.append_trace(trace=go.Box(
         y=distances.loc[distances['Classifier']==i]['cumulative_distance'],
-        hovertext=distances.loc[distances['Classifier']==i]['unique_time'],
-        customdata=[distances.loc[distances['Classifier']==i]['unique_time']],
+        hovertext=distances.loc[distances['Classifier']==i][unique_time_selector],
+        customdata=[distances.loc[distances['Classifier']==i][unique_time_selector]],
 
         #x=[xpos],
         name=i,
@@ -125,8 +130,8 @@ def migration_distance(dat=[], classifier_column='', identifier_column='', timep
     for xpos, i in enumerate(classes):
         fig.append_trace(trace=go.Box(
         y=distances.loc[distances['Classifier']==i]['persistence'],
-        hovertext=distances.loc[distances['Classifier']==i]['unique_time'],
-        customdata=[distances.loc[distances['Classifier']==i]['unique_time']],
+        hovertext=distances.loc[distances['Classifier']==i][unique_time_selector],
+        customdata=[distances.loc[distances['Classifier']==i][unique_time_selector]],
 
         #x=[xpos],
         name=i,
@@ -139,7 +144,9 @@ def migration_distance(dat=[], classifier_column='', identifier_column='', timep
     return fig
     
 
-def time_series(dat=[], classifier_column='', identifier_column='', timepoint_column='', data_column='', distance_filter='', testmode=False):
+def time_series(dat=[], classifier_column='', identifier_column='', 
+                timepoint_column='', data_column='', distance_filter='', 
+                unique_time_selector='', testmode=False):
     '''
     testmode: If testomde is set to True only the first 10 items will be used in the graph
     '''  
@@ -147,9 +154,9 @@ def time_series(dat=[], classifier_column='', identifier_column='', timepoint_co
     print(identifier_column)
     print(type(identifier_column))
     #cells=list(dat[identifier_column].unique())
-    dat['unique_time']=dat[identifier_column]+'_T'+dat[timepoint_column].astype('str')
+    dat[unique_time_selector]=dat[identifier_column]+'_T'+dat[timepoint_column].astype('str')
 
-    classes=list(dat[classifier_column].asstr.unique())
+    classes=list(dat[classifier_column].unique())
     Y_column=data_column[0]
     X_column=timepoint_column
     max_x=dat[X_column].max()
@@ -189,8 +196,8 @@ def time_series(dat=[], classifier_column='', identifier_column='', timepoint_co
             #getting y values
             y=dat_class.loc[dat_class[identifier_column]==c][Y_column],
             #getting unique ID
-            hovertext=dat_class.loc[dat_class[identifier_column]==c]['unique_time'],
-            customdata=[dat_class.loc[dat_class[identifier_column]==c]['unique_time']]),
+            hovertext=dat_class.loc[dat_class[identifier_column]==c][unique_time_selector],
+            customdata=[dat_class.loc[dat_class[identifier_column]==c][unique_time_selector]]),
 
             row=int(rowlist[math.floor(r_i)]) , col=1)
     
