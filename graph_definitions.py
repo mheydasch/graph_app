@@ -22,7 +22,7 @@ sys.path.append(os.path.realpath(__file__))
 import algorythm_definitions as AD
 from PIL import Image
 from PIL import ImageEnhance
-#%%
+#%% Plots for the plot dictionary, that are based on data
 def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_column='', data_column='', distance_filter='', testmode=False):
     '''
     testmode: If testomde is set to True only the first 10 items will be used in the graph
@@ -95,10 +95,10 @@ def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_colum
     print('...done')
         
     return fig
-#%%
+
 def migration_distance(dat=[], classifier_column='', identifier_column='', timepoint_column='', data_column='', distance_filter='', testmode=False):
     if testmode==True:
-        dat=dat[1000:2000]
+        dat=dat[500:10000]
     print('creating migration boxplots')
     print('calculating distances...')
     #calculating the distances and persistence of migration
@@ -210,7 +210,7 @@ def time_series(dat=[], classifier_column='', identifier_column='', timepoint_co
     print('...done')
     return fig
 
-#%%
+#%% plots displaying other things
 def image_graph(img, x_C=1024, y_C=1024, image_info=[0, 0, 0], ID=''):
     '''
     this graph is supposed to show an image an mark a point on it.
@@ -245,6 +245,7 @@ def image_graph(img, x_C=1024, y_C=1024, image_info=[0, 0, 0], ID=''):
             y=[abs(Y_S-y_C)],
             mode='markers',
             marker_opacity=1,
+            marker=dict(color='red')
             ))
     #displaying markers over all other tracked cells
     for i in list(image_info[2]['alt_cells'].keys()):
@@ -254,7 +255,8 @@ def image_graph(img, x_C=1024, y_C=1024, image_info=[0, 0, 0], ID=''):
                 x=[image_info[2]['alt_cells'][i][0]],
                 y=[abs((image_info[2]['alt_cells'][i][1]-y_C))],
                 mode='markers',
-                marker_opacity=0.5,
+                marker_opacity=1,
+                marker=dict(color='blue')
                 #marker_colour='rgba(0, 0, 255, .9)',
                 
                 )

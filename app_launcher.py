@@ -154,6 +154,7 @@ app.layout = html.Div([
                                                MD.image_slider(),
                                                
                                                html.Div(id='image_slider_output', style={'margin-top': 20},),
+                                               html.P('Adjust the brightness of the image'),
                                                MD.brightness_slider(),
                                                #dcc.Graph(id='histogram'),
                                                html.Img(id='test_image',
@@ -395,21 +396,23 @@ def update_dropdown(contents):
     return col_labels, identifier_cols, timepoint_cols, data_cols
 
 #is called once you select a column from the timepoint_selector dropdown menu
-@app.callback([Output('track_length_selector', 'max'),
-             Output('track_length_selector', 'marks'),
-             Output('track_length_selector', 'value')],
-             [Input('timepoint_selector', 'value')])
-#gets the minimum and maxium value of the timepoint column as selected
-#and adjusts min and max values of the track_length_selector slider as first output
-#and the marks on the slider as second output
-def get_max_timepoints(timepoint_selector):
-    min_timepoint=df[timepoint_selector].min()
-    max_timepoint=df[timepoint_selector].max()
-    marks={}
-    value=0
-    for m in range(min_timepoint, max_timepoint, 5):
-        marks.update({m:str(m)})
-    return max_timepoint, marks, value
+# =============================================================================
+# @app.callback([Output('track_length_selector', 'max'),
+#              Output('track_length_selector', 'marks'),
+#              Output('track_length_selector', 'value')],
+#              [Input('timepoint_selector', 'value')])
+# #gets the minimum and maxium value of the timepoint column as selected
+# #and adjusts min and max values of the track_length_selector slider as first output
+# #and the marks on the slider as second output
+# def get_max_timepoints(timepoint_selector):
+#     min_timepoint=df[timepoint_selector].min()
+#     max_timepoint=df[timepoint_selector].max()
+#     marks={}
+#     value=0
+#     for m in range(min_timepoint, max_timepoint, 5):
+#         marks.update({m:str(m)})
+#     return max_timepoint, marks, value
+# =============================================================================
 #%%
 #gets called when you select a value on the track_length_selector slider
 @app.callback([Output('track_length_output', 'children'),
