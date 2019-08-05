@@ -135,13 +135,7 @@ app.layout = html.Div([
     dcc.Tabs(id='tabs', children=[
              dcc.Tab(label='Table', 
                      children= [html.Table(id='output-data-upload'),
-                                    html.A(
-                                            'Download Data',
-                                            id='download-link',
-                                            download="rawdata.csv",
-                                            href="",
-                                            target="_blank"
-                                            ),
+
                                             MD.save_button()]),
                      #calling the table
                              
@@ -190,6 +184,13 @@ app.layout = html.Div([
                                                 MD.comment_submit(),
                                                 html.P('Do you want to flag all, or a single timepoint?'),
                                                 MD.flag_options(),
+                                                html.A(
+                                                        'Download Data',
+                                                        id='download-link',
+                                                        download="rawdata.csv",
+                                                        href="",
+                                                        target="_blank"
+                                                        ),
                                                   ],className='six columns', )
                                           
                                                
@@ -577,7 +578,7 @@ def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice,
         fig=graph_options[graph_selector](dat=dff, classifier_column=classifier_choice, 
                             identifier_column=identifier_selector,
                             timepoint_column=timepoint_selector, data_column=data_selector, 
-                            distance_filter=distance_filter, unique_time_selector=unique_time_selector, testmode=True)
+                            distance_filter=distance_filter, unique_time_selector=unique_time_selector, testmode=False)
         graph_storage.update({graph_selector:fig})
         return fig, graph_storage
 
@@ -679,6 +680,8 @@ def update_image_overlay(hoverData, image_dict, image_type, image_selector, shar
        #if no data for timepoint is found print error message
         except TypeError:
             print('no segmentation found for', i)
+            x_coord=0.1
+            y_coord=0.1
         
         
         #getting part of the dataframe that is from the current timepoint as well
@@ -696,7 +699,8 @@ def update_image_overlay(hoverData, image_dict, image_type, image_selector, shar
         
         
         
-        
+       
+
         
         loaded_dict.update({img:[x_coord, y_coord, {'alt_cells': alt_img}, tracking_ID]})
  

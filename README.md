@@ -18,8 +18,10 @@ Copy this URL to your browser and hit enter.
 Your data should be organized the following way:
 A .csv file in long format with columns for:
 Data (can be multiple columns)
-Timepoint(should be starting from 0)
+X and Y coordinates (can be same as data)
+Timepoint(should be starting from 1)
 Unique ID of each object
+A column that holds the unique ID + the timepoint
 A classifier for the different groups.
 
 
@@ -37,9 +39,10 @@ data_selector()
 In it's current version the app is only optimized for data representing cell migration in two dimensions.
 
 The software is currently optimized for the unique id having the following format:
-W{}_S{}_E{}.format(wellname, FoV name, TrackID). 
+WWellname_SSitenumber_Etrackid_Ttimepoint, such as:
+WC3_S0423_E10_T37
 This is relevant for finding the associated images.
-To make changes to this format edit the key pattern variable in the function update_images() in the file app_launcher.py.
+To make changes to this format edit it is necessary to change every piece of code including re.compile statements. 
 
 Your filename needs to contain the unique ID to be associated to the data.
 

@@ -226,7 +226,7 @@ def brightness_slider():
     return dcc.Slider(
             id='brightness_slider',
             min=0,
-            max=5,
+            max=15,
             step=0.1,
             value=1,
             marks={0:'0',                     
@@ -236,7 +236,12 @@ def brightness_slider():
                   2:'2',
                   3: '3',
                   4:'4',
-                  5:'5'})
+                  5:'5',
+                  6: '6',
+                  7: '7',
+                  8: '8',
+                  10: '10',
+                  15: '15',})
     
 #%% track filtering
 def track_comment():

@@ -304,4 +304,4 @@ def histogram(pixelcount):
                                xbins=dict(size=5)))
 
     return fig
-#/Volumes/imaging.data/Max/REF52/beta_pix/pix_9/cp.out1/output/    
+#/Volumes/imaging.data/Max/REF52/beta_pix/pix_10/cp.out1/output/    
