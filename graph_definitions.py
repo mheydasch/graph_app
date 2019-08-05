@@ -221,6 +221,7 @@ def image_graph(img, x_C=1024, y_C=1024, image_info=[0, 0, 0], ID=''):
     #print(image_info)
     X_S=image_info[0]
     Y_S=image_info[1]
+    ID=image_info[3]
     
     
     #calculate aspect ratio

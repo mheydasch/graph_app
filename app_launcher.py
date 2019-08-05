@@ -594,7 +594,7 @@ def update_image_overlay(hoverData, image_dict, image_type, image_selector, shar
         #exclusion criterium if timepoint is already there
         exclusion=re.compile('_E+.*')
         track_pattern=re.compile('_E.+?(?=\_)')
-        #taken from hovertext should be something like 'WB2_S1324_E4'
+        #taken from hovertext should be something like 'WB2_S1324_E4_T2'
         ID_or=hoverData['points'][0]['hovertext']
         
         #getting the track ID of the individual cell. Something like '_E4'
@@ -635,7 +635,7 @@ def update_image_overlay(hoverData, image_dict, image_type, image_selector, shar
     #getting dimensions of image
     img_size=imageio.imread(image_dict[imagelist[0]]).shape
     #inidiate a dictionary to coordinates for images. Including image shape
-    loaded_dict={'shape':img_size, 'ID':ID_or}
+    loaded_dict={'shape':img_size,}
     time_pattern=re.compile('_T+[0-9]*')
     timenumber_pattern=re.compile('[0-9]+')
    
@@ -656,7 +656,7 @@ def update_image_overlay(hoverData, image_dict, image_type, image_selector, shar
     
     #getting all the images for the respective timepoints
     for i in imagelist:
-        #adding the unoque ID of the cell back into the key of the image
+        #adding the unique ID of the cell back into the key of the image
         #to get X, Y coordinates. Something like 'WB2_S1324_E4_T1'
         tracking_ID=i.replace(re.search('_T', i).group(), track_ID+'_T')
         #print('tracking_ID: ',tracking_ID)
@@ -687,7 +687,7 @@ def update_image_overlay(hoverData, image_dict, image_type, image_selector, shar
         
         
         
-        loaded_dict.update({img:[x_coord, y_coord, {'alt_cells': alt_img}]})
+        loaded_dict.update({img:[x_coord, y_coord, {'alt_cells': alt_img}, tracking_ID]})
  
     print(AD.take(5, loaded_dict.items())) 
     print('encoding complete')
@@ -759,13 +759,13 @@ def update_image_graph(value, image_dict, brightness):
     
     image_dict=json.loads(image_dict)
     print(AD.take(5, image_dict.items()))
-    img=list(image_dict.keys())[value+2]
+    img=list(image_dict.keys())[value+1]
     print(img)
     #retrieving image shape from dictionary
     x=image_dict['shape'][0]
     y=image_dict['shape'][1]
     #retrieving cell ID from dictionary
-    ID=image_dict['ID'] 
+    #ID=image_dict['ID'] 
     
     #adjust the brightness of the image.
     image=Image.open(img)
@@ -798,7 +798,7 @@ def update_image_graph(value, image_dict, brightness):
     #histogram framework end
 
     return GD.image_graph('data:image/png;base64,{}'.format(encoded.decode()), x_C=x, y_C=y, 
-                          image_info=image_dict[img], ID=ID, ), #GD.histogram(pix_count)
+                          image_info=image_dict[img]), #ID=ID, ), #GD.histogram(pix_count)
 
 #%% Download csv file
 @app.callback(Output('download-link', 'href'),
