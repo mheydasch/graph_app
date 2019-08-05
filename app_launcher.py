@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -145,8 +146,7 @@ app.layout = html.Div([
                      #calling the graph 
                      children= [html.Div([
                                      #graph for showing data
-                                     html.Div([dcc.Graph(id='migration_data'),
-                                               #MD.save_button()
+                                     html.Div([dcc.Graph(id='migration_data'),            
                                                ],
                                           className= 'six columns'),
                                                #graph for showing the image
@@ -156,26 +156,11 @@ app.layout = html.Div([
                                                
                                                html.Div(id='image_slider_output', style={'margin-top': 20},),
                                                html.P('Adjust the brightness of the image'),
-                                               MD.brightness_slider(),
-                                               #dcc.Graph(id='histogram'),
-                                               html.Img(id='test_image',
-                                                        style={
-                                                            'height': '75%',
-                                                            'width': '75%',
-                                                            'float': 'fixed',
-                                                            'position': 'relative',
-                                                            'margin-top': 20,
-                                                            'margin-right': 20,
-                                                            
-                                                                }
-                                                        
-                                                        ),
+                                               MD.brightness_slider(),                                               
                                                html.Div(id='image_name',
                                                         ),
                                                html.Div([
-                                                    dcc.Markdown(("""
-                                                        **Click Data**
-                                        
+                                                    dcc.Markdown(("""                                        
                                                         Click on points in the graph.
                                                     """)),
                                                     html.Pre(id='click-data', style={
@@ -209,10 +194,8 @@ app.layout = html.Div([
                     
 
 
-#html.Img(id='test_image')
 
-    html.Div(id='output-image-upload', style={'display':'none'}),
-     #hidden divs for storing data
+    #hidden divs for storing data
     html.Div(id='shared_data', style={'display':'none'}),
     html.Div(id='flag_storage', style={'display':'none'}),
     #holding the type of the uploaded images
@@ -345,43 +328,6 @@ def update_images(n_clicks, folder):
     print('images uploaded')
     return image_dict
 
-
-#%%
-#updating image upload of upload button
-@app.callback([Output('output-image-upload', 'children'),
-              Output('output-image-upload', 'component'),
-              Output('image_type', 'children')],
-              [Input('upload-image', 'contents')],
-              [State('upload-image', 'filename'),
-               State('upload-image', 'last_modified')])
-def update_images_output(list_of_contents, list_of_names, list_of_dates):
-    print(list_of_names)
-    patterns=[re.compile('\.tiff$'), re.compile('\.png$'), re.compile('\.tif$'), re.compile('\.TIF$'), re.compile('\.jpeg$'), re.compile('\.jpg$')]
-
-    
-    images={}
-    if list_of_contents is not None:
-        for p in patterns:
-            children = [
-            parse_images(c, n, d) for c, n, d in
-            zip(list_of_contents, list_of_names, list_of_dates)]
-        for n, c in zip(list_of_names, list_of_contents):
-            #stores images in a dictionary with the filename as a key to the image
-            images.update({n:c})
-        for p in patterns:
-            if re.search(p, n)!=None:
-                filetype=re.search(p, n).group()
-                break
-        #print(images)
-        return children, images, filetype
-@app.callback(Output('test_image', 'src'),
-               [Input('output-image-upload', 'component')],
-               [State('upload-image', 'filename')])
-def display_image(component, filename):
-    print('displaying image')
-    print(filename)
-    return component[filename[0]]
-    
 #%% updating dropdown menus
 #gets called when data is uploaded. It does not actually use the input
 #from the upload, but gets the column names from the global variable df which is
@@ -407,24 +353,6 @@ def update_dropdown(contents):
 
     return col_labels, identifier_cols, timepoint_cols, data_cols, unique_time_columns, coordinates
 
-#is called once you select a column from the timepoint_selector dropdown menu
-# =============================================================================
-# @app.callback([Output('track_length_selector', 'max'),
-#              Output('track_length_selector', 'marks'),
-#              Output('track_length_selector', 'value')],
-#              [Input('timepoint_selector', 'value')])
-# #gets the minimum and maxium value of the timepoint column as selected
-# #and adjusts min and max values of the track_length_selector slider as first output
-# #and the marks on the slider as second output
-# def get_max_timepoints(timepoint_selector):
-#     min_timepoint=df[timepoint_selector].min()
-#     max_timepoint=df[timepoint_selector].max()
-#     marks={}
-#     value=0
-#     for m in range(min_timepoint, max_timepoint, 5):
-#         marks.update({m:str(m)})
-#     return max_timepoint, marks, value
-# =============================================================================
 #%%
 #gets called when you select a value on the track_length_selector slider
 @app.callback([Output('track_length_output', 'children'),
@@ -509,8 +437,6 @@ def update_flags(n_clicks, identifier_selector,
         except KeyError:
             dff['flags']='None'
             print('flags resetted')
-        #get the unique ID from the hovertext
-        #ID=clickData['points'][0]['hovertext']
         
         #check flag options. If single, add the submitted comment only to 
         #the selected timepoint
@@ -555,22 +481,16 @@ def update_flags(n_clicks, identifier_selector,
                State('graph_storage', 'component'),
                State('graph_reuse', 'value'),
                State('flag_filter', 'value'),
-               State('unique_time_selector', 'value'),
-               State('flag_storage', 'value')])
+               State('unique_time_selector', 'value')])
 
 def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice,
                identifier_selector, timepoint_selector, data_selector, distance_filter, 
-               graph_storage, graph_reuse, flag_filter, unique_time_selector, flag_storage):
+               graph_storage, graph_reuse, flag_filter, unique_time_selector):
     #if the graph storage is empty an empty dictionary will be created
     if graph_storage==None or graph_reuse=='no':
         graph_storage={}
     #data is read from the shared data div
     dff=pd.read_json(shared_data, orient='split')
-    #try to read flag sotrage. more elegant conditioning required here in the future
-    try:
-        dff=pd.read_json(flag_storage, orient='split')
-    except:
-        pass
     print(flag_filter)
     print(type(flag_filter))
     
@@ -707,19 +627,11 @@ def update_image_overlay(hoverData, image_dict, image_type, image_selector, shar
             if int(row[coordinate_selector[0]])!=x_coord:
                 alt_img.update({row[unique_time_selector]:[int(row[coordinate_selector[0]]), int(row[coordinate_selector[1]])]})
             
-        
-        
-        
-        
-       
-
-        
         loaded_dict.update({img:[x_coord, y_coord, {'alt_cells': alt_img}, tracking_ID]})
  
     print(AD.take(5, loaded_dict.items())) 
     print('encoding complete')
     return json.dumps(loaded_dict), ID_or
-    #return 'data:video/mp4;base64,{}'.format(temp_avi.decode()), ID_or
 
 #%% flagging framework
 @app.callback([Output('click-data', 'children'),
@@ -730,15 +642,6 @@ def display_click_data(clickData, image_overlay):
     '''getting click data from graph and displaying it
     '''
     ctx= dash.callback_context
-# =============================================================================
-#     if not ctx.triggered:
-#         button_id = 'No clicks yet'
-#     else:
-#         button_id = ctx.triggered[0]['prop_id'].split('.')[0]
-#         print('button_id: ', button_id)
-#     print( 'triggered:', ctx.triggered[0])
-#     print('triggered', ctx.triggered, 'states', ctx.states, 'inputs', ctx.inputs)
-# =============================================================================
     
     if ctx.triggered[0]['prop_id']=='image-overlay.clickData':
         data=image_overlay
@@ -791,8 +694,6 @@ def update_image_graph(value, image_dict, brightness):
     #retrieving image shape from dictionary
     x=image_dict['shape'][0]
     y=image_dict['shape'][1]
-    #retrieving cell ID from dictionary
-    #ID=image_dict['ID'] 
     
     #adjust the brightness of the image.
     image=Image.open(img)
@@ -807,22 +708,6 @@ def update_image_graph(value, image_dict, brightness):
     with open(img_path, 'rb') as f:
         encoded=base64.b64encode(f.read())
     print('encoding complete')
-    
-    #histogram framework
-    #pixel_dict={}
-    #imgy=Image.open(img, 'r')
-    #pix_val=list(imgy.getdata())
-    #pix_val_flat = [x for sets in pix_val for x in sets]
-    #excluding zeros
-    #pix_count=[x for sets in pix_val for x in sets if x>0]
-# =============================================================================
-#     for i in pix_val_flat:
-#         if i in pixel_dict.keys():
-#             pixel_dict[i]+=1
-#         else:
-#          pixel_dict.update({i:1})    
-# =============================================================================
-    #histogram framework end
 
     return GD.image_graph('data:image/png;base64,{}'.format(encoded.decode()), x_C=x, y_C=y, 
                           image_info=image_dict[img]), #ID=ID, ), #GD.histogram(pix_count)
@@ -843,156 +728,10 @@ def update_download_link(shared_data):
     return csv_string
 
 
-         
-# =============================================================================
-# @app.callback(Output('shared_data2', 'children'),
-#                 [Input('comment_submit', 'n_clicks')],
-#                 [State('shared_data', 'children'),
-#                 State('track_comment', 'value'),
-#                 State('migration_data', 'clickData'),
-#                 State('identifier_selector', 'value'),
-#                 State('flag_options', 'value')],)
-# def flag_data(n_clicks, shared_data, track_comment, click_data, identifier_selector, flag_options):
-#     '''
-#     gets the click data and allows you to add a comment to a new copy of the data frame
-#     You have the option to either add that comment to the individual timepoint selected, or to
-#     all timepoints of the track ID
-#     '''
-# 
-#     print(click_data['points'][0]['hovertext'])
-#     #read previously filtered data frame
-#     dff=pd.read_json(shared_data, orient='split')
-#     #create a new column and fill it
-#     dff['flags']=float('nan')
-#     #get the unique ID from the hovertext
-#     ID=click_data['points'][0]['hovertext']
-#     
-#     #check flag options. If single, add the submitted comment only to 
-#     #the selected timepoint
-#     if flag_options=='single':
-#         dff.loc[dff['unique_time']==ID, 'flags']=track_comment
-#     #if 'all' remove the timepoint component from the string and add the comment
-#     #to all datapoints with that ID
-#     if flag_options=='all':
-#        pattern=re.compile('_T.+')
-#        try:
-#            ID=ID.replace(re.search(pattern, ID).group(),'')
-#        except AttributeError:
-#            dff.loc[dff[identifier_selector]==ID, 'flags']=track_comment
-#        #print(dff[dff[identifier_selector]==ID])
-#         
-#     dff=dff.to_json(date_format='iso', orient='split')
-#   
-#     return dff
-# =============================================================================
-
-#%% Display image overlay, revert to this option until image manipulation is stable
-# =============================================================================
-# @app.callback(Output('image-overlay', 'src'),
-#               [Input('migration_data', 'hoverData')],
-#               [State('image_list','component'),
-#                State('image_type', 'children'),
-#                State('Image_selector', 'value'),])
-# def update_image_overlay(hoverData, image_dict, image_type, image_selector):
-#     start_time=time.time()
-# 
-#     #exclusion criterium if timepoint is already there
-#     exclusion=re.compile('_E.+?(?=\_)')
-#     #print(image_type)
-#     
-#     #exclusion criterium if timepoint isnot in hovertext
-#     exclusion_nt=re.compile('_E+.*')
-#     #getting hovertext from hoverdata and removing discrepancies between hover text and filenames
-#     try:
-#         ID=hoverData['points'][0]['hovertext'].replace(re.search(exclusion, hoverData['points'][0]['hovertext']).group(),'')
-#     except AttributeError:
-#         ID=hoverData['points'][0]['hovertext'].replace(re.search(exclusion_nt, hoverData['points'][0]['hovertext']).group(),'')
-#         ID=ID+'_T1'
-#     #if re.search('_T[0-9]+', ID)==None:
-#         
-#     print(ID)
-#     #searching the dictionary for keys fitting the hovertext
-#  
-#    
-#     image=image_dict[ID]
-#     #base64 encode the image
-#     with open(image, 'rb') as f:
-#         encoded=base64.b64encode(f.read())
-#     #update the dictionary with the encoded image
-#     image_dict.update({ID:encoded})
-#     print(type(image))
-#     #return the encoded image
-#     print("--- %s seconds ---" % (time.time() - start_time))
-#     return 'data:image/png;base64,{}'.format(encoded.decode())  
-# =============================================================================
-
-  
-#%%    
-    
-    #update the dictionary with the encoded image
-    #image_dict.update({ID:encoded})
-    #print(type(image))
-    #return the encoded image
-    #print("--- %s seconds ---" % (time.time() - start_time))
-    #return 'data:image/png;base64,{}'.format(encoded.decode())  
-       
-# =============================================================================
-#         
-#         if encoded_images==None:
-#         encoded_images={}
-# 
-#     if ID in encoded_images.keys():
-#         print("--- %s seconds ---" % (time.time() - start_time))
-#         encoded=encoded_images[ID][0]
-#         return 'data:image/png;base64,{}'.format(encoded.decode()), encoded_images
-#     else:
-#         image=image_dict[ID]
-#         #base64 encode the image
-#         encoded=base64.b64encode(open(image, 'rb').read())
-#         #update the dictionary with the encoded image
-#         encoded_images.update({ID:[encoded]})
-#         print(type(image))
-#         #return the encoded image
-#         print("--- %s seconds ---" % (time.time() - start_time))
-#         return 'data:image/png;base64,{}'.format(encoded.decode()), encoded_images 
-# =============================================================================
-    
-# =============================================================================
-#     if type(image)==bytes:
-#         print("--- %s seconds ---" % (time.time() - start_time))
-#         print(type(image))
-#         return 'data:image/png;base64,{}'.format(image.decode()) 
-#     if type(image)==str: 
-#         #base64 encode the image
-#         encoded=base64.b64encode(open(image, 'rb').read())
-#         #update the dictionary with the encoded image
-#         image_dict.update({ID:encoded})
-#         print(type(image))
-#         #return the encoded image
-#         print("--- %s seconds ---" % (time.time() - start_time))
-#         return 'data:image/png;base64,{}'.format(encoded.decode())    
-# =============================================================================
-    
-    
-# =============================================================================
-#         if re.search(ID, k) !=None:           
-#             #image_name=k.replace(re.search(exclusion, k).group(), '')
-#             print(k)
-#             print(ID)
-#             #getting the image from the dictionary by using it's name as the key
-#             image=image_dict[k]
-#             #base 64 encode the image
-#             encoded=base64.b64encode(open(image, 'rb').read())
-#             #return the encoded image
-#             print("--- %s seconds ---" % (time.time() - start_time))
-#             return 'data:image/png;base64,{}'.format(encoded.decode())
-#             #break out of the loop once the first image is found 
-#             break
-# =============================================================================
-
 
 
 
 #%%
 if __name__ == '__main__':
     app.run_server(debug=True)
+
