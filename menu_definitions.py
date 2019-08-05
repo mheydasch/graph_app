@@ -177,35 +177,18 @@ def save_button():
     return html.Button(id='save_df', n_clicks=0, children='Download datatable', style={'display':'none'})
 
 #%% images
+
 def Image_folder():
     return dcc.Textarea(
             placeholder='Enter the path to your images',
             value='enter full path to your image',
             style={'width':'100%'},
             id='Image_folder')
+
 def Folder_submit():
     return html.Button(id='Folder_submit', n_clicks=0, children='upload images')
     
-def Upload_images():
-    return dcc.Upload(
-        id='upload-image',
-        children=html.Div([
-            'Drag and Drop or ',
-            html.A('Select Files')
-        ]),
-        style={
-            'width': '100%',
-            'height': '60px',
-            'lineHeight': '60px',
-            'borderWidth': '1px',
-            'borderStyle': 'dashed',
-            'borderRadius': '5px',
-            'textAlign': 'center',
-            'margin': '10px'
-        },
-        # Allow multiple files to be uploaded
-        multiple=True
-    )
+
 def Image_selector():
     return dcc.RadioItems(options=[
         {'label' : 'Yes', 'value': 'Yes'}, 

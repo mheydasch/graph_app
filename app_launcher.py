@@ -79,12 +79,8 @@ app.layout = html.Div([
     },
     # Allow multiple files to be uploaded
     multiple=True), 
-    html.P('Upload a single image for troubleshooting'),
-    MD.Upload_images(),
     MD.Image_folder(),
     MD.Folder_submit(),
-    html.P('Do you have other channels that you want to merge?'),
-    MD.Image_selector(),
     #calling menus
     html.Hr(),
     html.Div(
@@ -218,7 +214,6 @@ app.layout = html.Div([
     html.Div(id='image_list', style={'display':'none'}),
     #holds graphs after they have been created for faster access
     html.Div(id='graph_storage', style={'display':'none'}),
-    html.Div(id='encoded_img_storage', style={'display':'none'}),
     #stores raw click data to be retrieved by update_flags
     html.Div(id='click_data_storage', style={'display':'none'})
 ])
@@ -301,12 +296,11 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
         children = [
             parse_contents(c, n, d) for c, n, d in
             zip(list_of_contents, list_of_names, list_of_dates)]
-        return children#, df.to_json(date_format='iso', orient='split')
+        return children
 #%% update after image folder got parsed 
 @app.callback(Output('image_list', 'component'),
               [Input('Folder_submit', 'n_clicks')],
               [State('Image_folder', 'value'),])
-#calls the upload function, updating the global variable df and also storing 
 def update_images(n_clicks, folder):
     find_dir='overlays'
     #finding only png files
@@ -343,41 +337,6 @@ def update_images(n_clicks, folder):
     return image_dict
 
 
-#%%
-#updating image upload of upload button
-@app.callback([Output('output-image-upload', 'children'),
-              Output('output-image-upload', 'component'),
-              Output('image_type', 'children')],
-              [Input('upload-image', 'contents')],
-              [State('upload-image', 'filename'),
-               State('upload-image', 'last_modified')])
-def update_images_output(list_of_contents, list_of_names, list_of_dates):
-    print(list_of_names)
-    patterns=[re.compile('\.tiff$'), re.compile('\.png$'), re.compile('\.tif$'), re.compile('\.TIF$'), re.compile('\.jpeg$'), re.compile('\.jpg$')]
-
-    
-    images={}
-    if list_of_contents is not None:
-        for p in patterns:
-            children = [
-            parse_images(c, n, d) for c, n, d in
-            zip(list_of_contents, list_of_names, list_of_dates)]
-        for n, c in zip(list_of_names, list_of_contents):
-            #stores images in a dictionary with the filename as a key to the image
-            images.update({n:c})
-        for p in patterns:
-            if re.search(p, n)!=None:
-                filetype=re.search(p, n).group()
-                break
-        #print(images)
-        return children, images, filetype
-@app.callback(Output('test_image', 'src'),
-               [Input('output-image-upload', 'component')],
-               [State('upload-image', 'filename')])
-def display_image(component, filename):
-    print('displaying image')
-    print(filename)
-    return component[filename[0]]
     
 #%% updating dropdown menus
 #gets called when data is uploaded. It does not actually use the input
@@ -578,13 +537,12 @@ def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice,
               [Input('migration_data', 'clickData')],
               [State('image_list','component'),
                State('image_type', 'children'),
-               State('Image_selector', 'value'),
                State('shared_data', 'children'),
                State('identifier_selector', 'value'),
                State('timepoint_selector', 'value'),
                State('unique_time_selector', 'value'),
                State('coordinate_selector', 'value')])
-def update_image_overlay(hoverData, image_dict, image_type, image_selector, shared_data, 
+def update_image_overlay(hoverData, image_dict, image_type, shared_data, 
                          identifier_selector, timepoint_selector, unique_time_selector,
                          coordinate_selector):
     #start_time=time.time()
