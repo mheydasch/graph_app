@@ -172,6 +172,23 @@ def coordinate_selector(df):
             options=data_options,
             multi=True,
             value=['Location_Center_X', 'Location_Center_Y'])
+    
+def ID_pattern():
+    return dcc.Textarea(
+            value='(?P<Site_ID>W[A-Z][0-9]+_S[0-9]{4})(?P<TrackID>_E[0-9]+)(?P<Timepoint>_T[0-9]+)',
+            style={'width':'100%'},
+            id='ID_pattern',
+            )   
+def timeless_ID_pattern():
+    return dcc.Textarea(
+            value='(?P<Well>W[A-Z][0-9]+)(?P<Site>_S[0-9]{4})(?P<TrackID>_E[0-9]+)',
+            style={'width':'100%'},
+            id='timeless_ID_pattern',
+            )  
+def ID_submit():
+    return html.Button(id='ID_submit', n_clicks=0, children='Submit pattern')
+    
+    
 
 def save_button():
     return html.Button(id='save_df', n_clicks=0, children='Download datatable', style={'display':'none'})

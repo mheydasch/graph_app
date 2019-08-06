@@ -77,10 +77,16 @@ app.layout = html.Div([
         'textAlign': 'center',
         'margin': '10px'
     },
-    # Allow multiple files to be uploaded
+    # Allow only one file to be uploaded
     multiple=True), 
+    #menus for image uploading
+    #needs to be full path to the image folder
     MD.Image_folder(),
     MD.Folder_submit(),
+    #menus for pattern uploading of IDs,
+    #needs to be a regular expression
+    MD.ID_pattern(),
+    MD.ID_submit(),
     #calling menus
     html.Hr(),
     html.Div(
@@ -178,7 +184,7 @@ app.layout = html.Div([
                      )
             ]),
 #tabs section end    
-#(?P<Well>W[A-Z][0-9]+)_(?P<Site>S[0-9]{4})_(?P<TrackID>E[0-9]+)_(?P<Timepoint>T[0-9]+)           
+           
                                  
 
  
@@ -199,7 +205,10 @@ app.layout = html.Div([
     #holds graphs after they have been created for faster access
     html.Div(id='graph_storage', style={'display':'none'}),
     #stores raw click data to be retrieved by update_flags
-    html.Div(id='click_data_storage', style={'display':'none'})
+    html.Div(id='click_data_storage', style={'display':'none'}),
+    #stores the patterns for the ID
+    html.Div(id='pattern_storage', style={'display':'none'}),
+
 ])
     
 
@@ -262,8 +271,7 @@ def parse_images(contents, filename, date):
 
 #%% update after data upload
          
-@app.callback(Output('output-data-upload', 'children'),
-              
+@app.callback(Output('output-data-upload', 'children'),              
               [Input('upload-data', 'contents')],
               [State('upload-data', 'filename'),
                State('upload-data', 'last_modified')])
@@ -277,6 +285,32 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
             parse_contents(c, n, d) for c, n, d in
             zip(list_of_contents, list_of_names, list_of_dates)]
         return children
+
+#%% updating dropdown menus
+#gets called when data is uploaded. It does not actually use the input
+#from the upload, but gets the column names from the global variable df which is
+#updated by the data upload. Outputs the column names as options ot the three
+#dropdown menus
+@app.callback([Output('classifier_choice', 'options'),
+               Output('identifier_selector', 'options'),
+               Output('timepoint_selector', 'options'),
+               Output('data_selector', 'options'),
+               Output('unique_time_selector', 'options'),
+               Output('coordinate_selector', 'options')],
+              [Input('output-data-upload', 'children')])
+
+def update_dropdown(contents):
+    columns=df.columns
+    col_labels=[{'label' :k, 'value' :k} for k in columns]
+    identifier_cols=col_labels
+    timepoint_cols=col_labels
+    data_cols=col_labels
+    unique_time_columns=col_labels
+    coordinates=col_labels
+    #print(col_labels)
+
+    return col_labels, identifier_cols, timepoint_cols, data_cols, unique_time_columns, coordinates
+
 #%% update after image folder got parsed 
 @app.callback(Output('image_list', 'component'),
               [Input('Folder_submit', 'n_clicks')],
@@ -315,33 +349,18 @@ def update_images(n_clicks, folder):
     print(AD.take(5, image_dict.items()))
     print('images uploaded')
     return image_dict
+#%% ID pattern recognition
+@app.callback([Output('pattern_storage', 'children'),],
+              [Input('ID_submit', 'n_clicks')],
+              [State('ID_pattern', 'value'),])
 
-
+#gets triggered when the pattern submit button is pressed and simply
+#stores the submitted regex pattern
+def update_ID_pattern(n_clicks, value, ):
+    print(value, 'submitted')
     
-#%% updating dropdown menus
-#gets called when data is uploaded. It does not actually use the input
-#from the upload, but gets the column names from the global variable df which is
-#updated by the data upload. Outputs the column names as options ot the three
-#dropdown menus
-@app.callback([Output('classifier_choice', 'options'),
-               Output('identifier_selector', 'options'),
-               Output('timepoint_selector', 'options'),
-               Output('data_selector', 'options'),
-               Output('unique_time_selector', 'options'),
-               Output('coordinate_selector', 'options')],
-              [Input('output-data-upload', 'children')])
-
-def update_dropdown(contents):
-    columns=df.columns
-    col_labels=[{'label' :k, 'value' :k} for k in columns]
-    identifier_cols=col_labels
-    timepoint_cols=col_labels
-    data_cols=col_labels
-    unique_time_columns=col_labels
-    coordinates=col_labels
-    #print(col_labels)
-
-    return col_labels, identifier_cols, timepoint_cols, data_cols, unique_time_columns, coordinates
+    return [str(value)], 
+    
 
 
 #%%
@@ -396,12 +415,15 @@ def filter_graph(track_length_selector, flag_filter, flag_storage, identifier_se
                State('flag_filter', 'options'),
                State('flag_storage', 'children'),
                State('click_data_storage', 'children'),
-               State('unique_time_selector', 'value')
+               State('unique_time_selector', 'value'),
+               State('pattern_storage', 'children')
                ])
 def update_flags(n_clicks, identifier_selector, 
                  track_comment, clickData, flag_options, flag_filter, 
-                 flag_storage, click_data_storage, unique_time_selector):
+                 flag_storage, click_data_storage, unique_time_selector, pattern_storage):
     print(track_comment)
+    print('pattern storage: ', pattern_storage)
+    pattern=re.compile(pattern_storage[0])
     dff=df
     try: 
         flag_storage=pd.read_json(flag_storage, orient='split')
@@ -440,9 +462,10 @@ def update_flags(n_clicks, identifier_selector,
         #to all datapoints with that ID like 'WB2_S1324_E4'
         if flag_options=='all':
            print('all')
-           pattern=re.compile('_T.*')
+           #pattern=re.compile('_T.*')
            try:
-               ID=ID.replace(re.search(pattern, ID).group(),'')
+               Timepoint=re.search(pattern, ID).group('Timepoint')
+               ID=ID.replace(Timepoint,'')
                dff.loc[dff[identifier_selector]==ID, 'flags']=track_comment
            except AttributeError:
                dff.loc[dff[identifier_selector]==ID, 'flags']=track_comment
@@ -520,52 +543,68 @@ def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice,
                State('identifier_selector', 'value'),
                State('timepoint_selector', 'value'),
                State('unique_time_selector', 'value'),
-               State('coordinate_selector', 'value')])
+               State('coordinate_selector', 'value'),
+               State('pattern_storage', 'children')],)
 def update_image_overlay(hoverData, image_dict, image_type, shared_data, 
                          identifier_selector, timepoint_selector, unique_time_selector,
-                         coordinate_selector):
-    #start_time=time.time()
+                         coordinate_selector, pattern_storage):
+
+    print('pattern storage: ', pattern_storage)
+    pattern=re.compile(pattern_storage[0])
     #Error message if no images have been uploaded
     if len(image_dict)==0:
         print('No images have been uploaded')
     data=pd.read_json(shared_data, orient='split')
     #getting hovertext from hoverdata and removing discrepancies between hover text and filenames
     #(stripping of track_ID)
+    ID_or=hoverData['points'][0]['hovertext']
     try:
         #exclusion criterium if timepoint is already there
-        exclusion=re.compile('_E+.*')
-        track_pattern=re.compile('_E.+?(?=\_)')
+        #exclusion=re.compile('_E+.*')
+        #track_pattern=re.compile('_E.+?(?=\_)')
         #taken from hovertext should be something like 'WB2_S1324_E4_T2'
-        ID_or=hoverData['points'][0]['hovertext']
-        
+
+
+        #getting the different components of the ID. Such as:
+        #'WB2' '_S0520' '_E3' '_T40'         
+        Site_ID, track_ID, Timepoint =re.search(pattern, ID_or).group(
+                 'Site_ID', 'TrackID', 'Timepoint')
+
+        #exclusion criterium if timepoint is already there
+        exclusion=track_ID+Timepoint
+        #print(Timepoint, track_ID, Wellname, Sitename)
         #getting the track ID of the individual cell. Something like '_E4'
-        track_ID=re.search(track_pattern, ID_or).group()
+        #track_ID=re.search(track_pattern, ID_or).group()
 
         
         print('track_ID: ', track_ID)
         #getting the ID to the images by stripping off extensions
         #something like 'WB2_S1324
-        ID=ID_or.replace(re.search(exclusion, ID_or).group(),'')
+        ID=ID_or.replace(exclusion,'')
         print('ID_or: ', ID_or)
         print('ID: ', ID)
-    except AttributeError:        
-        #exclusion criterium if timepoint isnot in hovertext
-        exclusion_nt=re.compile('_E+.*')
-        ID_or=hoverData['points'][0]['hovertext']
-        
-        #getting the track ID of the individual cell. Something like '_E4'
-        track_ID=re.search(exclusion, ID_or).group()
-
-        
-        print('track_ID: ', track_ID)
-        #getting the ID to the images by stripping off extensions
-        #something like 'WB2_S1324
-        ID=ID_or.replace(re.search(exclusion, ID_or).group(),'')
-        print('ID_or: ', ID_or)
-        print('ID: ', ID)
-        #hovertext in graph needs to be changed back to uniqe time when region should be marked
-        ID=hoverData['points'][0]['hovertext'].replace(re.search(exclusion_nt, hoverData['points'][0]['hovertext']).group(),'')
-        print('ID: ',ID)
+    except AttributeError:       
+        print('Error: unrecognized pattern')
+# =============================================================================
+#         #exclusion_nt=re.compile('_E+.*')
+#         Wellname, Sitename, track_ID =re.search(timeless_pattern, ID_or).group(
+#                 'Well', 'Site', 'TrackID')
+#                 #exclusion criterium if timepoint isnot in hovertext
+#         exclusion=track_ID
+#         #getting the track ID of the individual cell. Something like '_E4'
+#         #track_ID=re.search(exclusion, ID_or).group()
+# 
+#         
+#         print('track_ID: ', track_ID)
+#         #getting the ID to the images by stripping off extensions
+#         #something like 'WB2_S1324
+#         ID=ID_or.replace(exclusion, '')
+#         print('ID_or: ', ID_or)
+#         print('ID: ', ID)
+#         #hovertext in graph needs to be changed back to uniqe time when region should be marked
+#         #ID=hoverData['points'][0]['hovertext'].replace(re.search(exclusion_nt, hoverData['points'][0]['hovertext']).group(),'')
+#         #print('ID: ',ID)
+# =============================================================================
     #searching the dictionary for keys fitting the hovertext   
     imagelist=[i for i in image_dict.keys() if ID in i]
     if len(imagelist)==0:
@@ -577,7 +616,7 @@ def update_image_overlay(hoverData, image_dict, image_type, shared_data,
     img_size=imageio.imread(image_dict[imagelist[0]]).shape
     #inidiate a dictionary to coordinates for images. Including image shape
     loaded_dict={'shape':img_size,}
-    time_pattern=re.compile('_T+[0-9]*')
+    #time_pattern=re.compile('_T+[0-9]*')
     timenumber_pattern=re.compile('[0-9]+')
    
     
@@ -587,10 +626,10 @@ def update_image_overlay(hoverData, image_dict, image_type, shared_data,
     Image_ID= imagelist[0]
     print('Image_ID', Image_ID)
     #get the time, something like _T1
-    Time_ID= re.search(time_pattern, Image_ID).group()
-    print('Time_ID', Time_ID)
+    #Time_ID= re.search(time_pattern, Image_ID).group()
+    print('Timepoint', Timepoint)
     #get the ID only from the Site, something like WB2_S1324
-    Site_ID= Image_ID.replace(Time_ID, '')
+    #Site_ID= Image_ID.replace(Timepoint, '')
     print('Site_ID', Site_ID)
     #gets part of the dataframe that is from the current image
     Site_data=data[data[identifier_selector].str.contains(Site_ID)]
@@ -598,7 +637,7 @@ def update_image_overlay(hoverData, image_dict, image_type, shared_data,
     #getting all the images for the respective timepoints
     for i in imagelist:
         #adding the unique ID of the cell back into the key of the image
-        #to get X, Y coordinates. Something like 'WB2_S1324_E4_T1'
+        #to get X, Y coordinates. Something like 'WB2_S1324_E4_T1'        
         tracking_ID=i.replace(re.search('_T', i).group(), track_ID+'_T')
         #print('tracking_ID: ',tracking_ID)
         img=image_dict[i]
@@ -614,7 +653,8 @@ def update_image_overlay(hoverData, image_dict, image_type, shared_data,
         
         #getting part of the dataframe that is from the current timepoint as well
         #get the time, something like _T1
-        Time_ID= re.search(time_pattern, i).group()
+        print('i: ', i)
+        Time_ID= i.replace(Site_ID, '')
         #gets only the numeric value of the timepoint
         Time= re.search(timenumber_pattern, Time_ID).group()
         timepoint_data=Site_data[Site_data[timepoint_selector]==int(Time)]
