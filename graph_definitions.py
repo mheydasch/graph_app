@@ -215,7 +215,7 @@ def time_series(dat=[], classifier_column='', identifier_column='',
     return fig
 
 #%% plots displaying other things
-def image_graph(img, x_C=1024, y_C=1024, image_info=[0, 0, 0], ID=''):
+def image_graph(img, x_C=1024, y_C=1024, image_info=[0, 0, 0], ID='', data=''):
     '''
     this graph is supposed to show an image an mark a point on it.
     '''    
@@ -238,33 +238,66 @@ def image_graph(img, x_C=1024, y_C=1024, image_info=[0, 0, 0], ID=''):
             marker_opacity=0
         )
             )
-    #add cell marker    
-    fig.add_trace(go.Scatter(
-            hovertext=ID,
-            customdata=[ID],
-            #name=ID,
-            x=[X_S],
-            #images start with y0 at the top, graphs with y0 at the bottom
-            y=[abs(Y_S-y_C)],
-            mode='markers',
-            marker_opacity=1,
-            marker=dict(color='red')
-            ))
-    #displaying markers over all other tracked cells
-    for i in list(image_info[2]['alt_cells'].keys()):
+    #if data is provided, add flags to text data  
+    if type(data)!=str:
         fig.add_trace(go.Scatter(
-                #name=i,
-                hovertext=i,
-                customdata=[i],
-                x=[image_info[2]['alt_cells'][i][0]],
-                y=[abs((image_info[2]['alt_cells'][i][1]-y_C))],
+                hovertext=ID,
+                customdata=[ID],
+                
+                name=data[data['unique_time']==ID].loc[:, 'flags'].values[0],
+                #name=ID,
+                x=[X_S],
+                #images start with y0 at the top, graphs with y0 at the bottom
+                y=[abs(Y_S-y_C)],
                 mode='markers',
                 marker_opacity=1,
-                marker=dict(color='blue')
-                
-                )
-        )
+                marker=dict(color='red')
+                ))
+        #displaying markers over all other tracked cells
+        for i in list(image_info[2]['alt_cells'].keys()):
+            fig.add_trace(go.Scatter(
+                    #name=i,
+                    hovertext=i,
+                  
+                    name=data[data['unique_time']==i].loc[:, 'flags'].values[0],
+                    customdata=[i],
+                    x=[image_info[2]['alt_cells'][i][0]],
+                    y=[abs((image_info[2]['alt_cells'][i][1]-y_C))],
+                    mode='markers',
+                    marker_opacity=1,
+                    marker=dict(color='blue')
+                    
+                    )
+            )
+    else:
+        fig.add_trace(go.Scatter(
+        hovertext=ID,
+        customdata=[ID],
+        #name=ID,
+        x=[X_S],
+        #images start with y0 at the top, graphs with y0 at the bottom
+        y=[abs(Y_S-y_C)],
+        mode='markers',
+        marker_opacity=1,
+        marker=dict(color='red')
+        ))
+        #displaying markers over all other tracked cells
+        for i in list(image_info[2]['alt_cells'].keys()):
+            fig.add_trace(go.Scatter(
+                    #name=i,
+                    hovertext=i,
+                    customdata=[i],
+                    x=[image_info[2]['alt_cells'][i][0]],
+                    y=[abs((image_info[2]['alt_cells'][i][1]-y_C))],
+                    mode='markers',
+                    marker_opacity=1,
+                    marker=dict(color='blue')
+                    
+                    )
+            )
+            
     fig.update_layout(
+            showlegend=False,
             images=[
                     go.layout.Image(source=img,
                                     xref='x',

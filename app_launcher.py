@@ -414,7 +414,7 @@ def filter_graph(track_length_selector, flag_filter, flag_storage, identifier_se
                State('flag_options', 'value'),
                State('flag_filter', 'options'),
                State('flag_storage', 'children'),
-               State('click_data_storage', 'children'),
+               State('click_data_storage', 'component'),
                State('unique_time_selector', 'value'),
                State('pattern_storage', 'children')
                ])
@@ -653,7 +653,7 @@ def update_image_overlay(hoverData, image_dict, image_type, shared_data,
         
         #getting part of the dataframe that is from the current timepoint as well
         #get the time, something like _T1
-        print('i: ', i)
+        #print('i: ', i)
         Time_ID= i.replace(Site_ID, '')
         #gets only the numeric value of the timepoint
         Time= re.search(timenumber_pattern, Time_ID).group()
@@ -672,9 +672,10 @@ def update_image_overlay(hoverData, image_dict, image_type, shared_data,
 
 #%% flagging framework
 @app.callback([Output('click-data', 'children'),
-              Output('click_data_storage', 'children')],
+              Output('click_data_storage', 'component')],
               [Input('migration_data', 'clickData'),
-               Input('image-overlay', 'clickData')],)    
+               Input('image-overlay', 'clickData')],
+               )    
 def display_click_data(clickData, image_overlay):
     '''getting click data from graph and displaying it
     '''
@@ -712,9 +713,10 @@ def get_image_timepoints(image_dict):
               [Input('image_slider', 'value'),
                ],
               [State('image_list', 'children'),
-               State('brightness_slider', 'value')])
+               State('brightness_slider', 'value'),
+               State('flag_storage', 'children')])
 
-def update_image_graph(value, image_dict, brightness):
+def update_image_graph(value, image_dict, brightness, flag_storage):
     '''
     Calls the graph for image display
     Gets the image list from update_image_overlay.
@@ -729,6 +731,11 @@ def update_image_graph(value, image_dict, brightness):
     print(AD.take(5, image_dict.items()))
     img=list(image_dict.keys())[value+1]
     print(img)
+    try:
+        data=pd.read_json(flag_storage, orient='split')
+    except:
+        data=''
+        print('flag_storage is empty')
     #retrieving image shape from dictionary
     x=image_dict['shape'][0]
     y=image_dict['shape'][1]
@@ -750,7 +757,7 @@ def update_image_graph(value, image_dict, brightness):
     print('encoding complete')
 
     return GD.image_graph('data:image/png;base64,{}'.format(encoded.decode()), x_C=x, y_C=y, 
-                          image_info=image_dict[img]), #ID=ID, ), #GD.histogram(pix_count)
+                          image_info=image_dict[img], data=data), #ID=ID, ), #GD.histogram(pix_count)
 
 #%% Download csv file
 @app.callback(Output('download-link', 'href'),
