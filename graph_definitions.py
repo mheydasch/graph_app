@@ -31,7 +31,7 @@ def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_colum
     print(identifier_column)
     print(type(identifier_column))
     #cells=list(dat[identifier_column].unique())
-    dat[unique_time_selector]=dat[identifier_column]+'_T'+dat[timepoint_column].astype('str')
+    #dat[unique_time_selector]=dat[identifier_column]+'_T'+dat[timepoint_column].astype('str')
 
     classes=list(dat[classifier_column].unique())
     X_column=data_column[0]
@@ -74,8 +74,9 @@ def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_colum
             y=dat_class.loc[dat_class[identifier_column]==c][Y_column],
             #getting unique ID
             hovertext=dat_class.loc[dat_class[identifier_column]==c][unique_time_selector],
-            customdata=[dat_class.loc[dat_class[identifier_column]==c][unique_time_selector]]),
-
+            customdata=[dat_class.loc[dat_class[identifier_column]==c][unique_time_selector]],
+            name=c,
+            ),
             row=int(rowlist[math.floor(r_i)]) , col=1)
 
 
@@ -118,7 +119,6 @@ def migration_distance(dat=[], classifier_column='', identifier_column='',
         y=distances.loc[distances['Classifier']==i]['cumulative_distance'],
         hovertext=distances.loc[distances['Classifier']==i][unique_time_selector],
         customdata=[distances.loc[distances['Classifier']==i][unique_time_selector]],
-
         name=i,
         boxpoints='all',
         notched=True), 
@@ -194,8 +194,8 @@ def time_series(dat=[], classifier_column='', identifier_column='',
             y=dat_class.loc[dat_class[identifier_column]==c][Y_column],
             #getting unique ID
             hovertext=dat_class.loc[dat_class[identifier_column]==c][unique_time_selector],
-            customdata=[dat_class.loc[dat_class[identifier_column]==c][unique_time_selector]]),
-
+            customdata=[dat_class.loc[dat_class[identifier_column]==c][unique_time_selector]],
+            name=c,),
             row=int(rowlist[math.floor(r_i)]) , col=1)
     
 
@@ -242,6 +242,7 @@ def image_graph(img, x_C=1024, y_C=1024, image_info=[0, 0, 0], ID=''):
     fig.add_trace(go.Scatter(
             hovertext=ID,
             customdata=[ID],
+            #name=ID,
             x=[X_S],
             #images start with y0 at the top, graphs with y0 at the bottom
             y=[abs(Y_S-y_C)],
@@ -252,6 +253,7 @@ def image_graph(img, x_C=1024, y_C=1024, image_info=[0, 0, 0], ID=''):
     #displaying markers over all other tracked cells
     for i in list(image_info[2]['alt_cells'].keys()):
         fig.add_trace(go.Scatter(
+                #name=i,
                 hovertext=i,
                 customdata=[i],
                 x=[image_info[2]['alt_cells'][i][0]],
@@ -259,7 +261,6 @@ def image_graph(img, x_C=1024, y_C=1024, image_info=[0, 0, 0], ID=''):
                 mode='markers',
                 marker_opacity=1,
                 marker=dict(color='blue')
-                #marker_colour='rgba(0, 0, 255, .9)',
                 
                 )
         )

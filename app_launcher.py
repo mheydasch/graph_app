@@ -149,10 +149,9 @@ app.layout = html.Div([
                                                html.Div(id='image_slider_output', style={'margin-top': 20},),
                                                html.P('Adjust the brightness of the image'),
                                                MD.brightness_slider(),
-
                                                html.Div([
                                                     dcc.Markdown(("""
-                                                        **Click Data**
+                                                         
                                         
                                                         Click on points in the graph.
                                                     """)),
@@ -179,7 +178,7 @@ app.layout = html.Div([
                      )
             ]),
 #tabs section end    
-           
+#(?P<Well>W[A-Z][0-9]+)_(?P<Site>S[0-9]{4})_(?P<TrackID>E[0-9]+)_(?P<Timepoint>T[0-9]+)           
                                  
 
  
