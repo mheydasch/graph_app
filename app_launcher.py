@@ -371,8 +371,7 @@ def update_ID_pattern(n_clicks, value, ):
 
 #%%
 #gets called when you select a value on the track_length_selector slider
-@app.callback([Output('track_length_output', 'children'),
-              Output('shared_data', 'data')],
+@app.callback(Output('track_length_output', 'children'),
               [Input('track_length_selector', 'value'),
                Input('flag_filter', 'value')],
               [State('flag_storage', 'data'),
@@ -386,34 +385,14 @@ def update_ID_pattern(n_clicks, value, ):
 def filter_graph(track_length_selector, flag_filter, flag_storage, identifier_selector, timepoint_selector, 
                   ):
     display_string='Minimum track length: {} {}'.format(track_length_selector, 'timepoints')
-    dff=df
-    #if flag storage is already filled, take data from it  
-    try:
-        flag_storage=pd.read_json(flag_storage, orient='split')
-        if identifier_selector in flag_storage:
-            dff=flag_storage
-            print('flag_storage not empty')
-    #otherwise take glboal variable  
-    except ValueError:
-        print('flag_storage empty')
     #grouping the data by the identifier
-    track_lengths=pd.DataFrame(dff.groupby(identifier_selector)[timepoint_selector].count())
-    #filtering the track lengths by only selecting those with a track length higher,
-    #then the one chosen in the slider
-    thresholded_tracks=track_lengths[track_lengths[timepoint_selector]>track_length_selector]
-    track_ids=thresholded_tracks.index.tolist()
-    dff=dff.loc[df[identifier_selector].isin(track_ids)]
     print('tracks with length < {} have been excluded'.format(track_length_selector))
 
-
-    dff=dff.to_json(date_format='iso', orient='split') 
-
-    return display_string, dff
+    return display_string
 
 #%% storing flags to flag sotrage once the submit button is pressed
 @app.callback([Output('flag_storage', 'data'),
-              Output('flag_filter', 'options'),
-              Output('shared_data', 'clear_data')],
+              Output('flag_filter', 'options')],
               [Input('comment_submit', 'n_clicks')],
               [State('identifier_selector', 'value'),
                State('track_comment', 'value'),
@@ -430,13 +409,11 @@ def update_flags(n_clicks, identifier_selector,
                  flag_storage, click_data_storage, unique_time_selector, pattern_storage):
     print(track_comment)
     print('pattern storage: ', pattern_storage)
-    pattern=re.compile(pattern_storage[0])
-    dff=df
-    try: 
+    pattern=re.compile(pattern_storage[0])    
+    if flag_storage != None: 
         flag_storage=pd.read_json(flag_storage, orient='split')
-        if identifier_selector in flag_storage:
-            dff=pd.read_json(flag_storage, orient='split')
-    except ValueError:
+    else:
+        dff=pd.DataFrame(df)
         print('flag_storage empty')
     
     #flagging framework
@@ -483,7 +460,7 @@ def update_flags(n_clicks, identifier_selector,
         print('flags', flags)
     flag_storage=dff.to_json(date_format='iso', orient='split') 
     print('flag_filter', flag_filter)    
-    return flag_storage, flag_filter, True
+    return flag_storage, flag_filter
 
 #%% update graph 
 
@@ -495,7 +472,6 @@ def update_flags(n_clicks, identifier_selector,
                Output('graph_storage', 'data')],
               [Input('plot_button', 'n_clicks')],
               [State('graph_selector', 'value'),
-               State('shared_data', 'data'),
                State('classifier_choice', 'value'),
                State('identifier_selector', 'value'),
                State('timepoint_selector', 'value'),
@@ -505,11 +481,13 @@ def update_flags(n_clicks, identifier_selector,
                State('graph_reuse', 'value'),
                State('flag_filter', 'value'),
                State('unique_time_selector', 'value'),
-               State('flag_storage', 'data')])
+               State('flag_storage', 'data'),
+               State('track_length_selector', 'value')])
 
-def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice,
+def plot_graph(n_clicks, graph_selector, classifier_choice,
                identifier_selector, timepoint_selector, data_selector, distance_filter, 
-               graph_storage, graph_reuse, flag_filter, unique_time_selector, flag_storage):
+               graph_storage, graph_reuse, flag_filter, unique_time_selector, flag_storage,
+               track_length_selector):
     #if the graph storage is empty an empty dictionary will be created
     if graph_storage==None or graph_reuse=='no':
         graph_storage={}
@@ -520,7 +498,13 @@ def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice,
     if flag_storage != None:
         dff=pd.read_json(flag_storage, orient='split')
     else:
-        dff=pd.read_json(shared_data, orient='split')
+        dff=pd.DataFrame(df)
+    track_lengths=pd.DataFrame(dff.groupby(identifier_selector)[timepoint_selector].count())
+    #filtering the track lengths by only selecting those with a track length higher,
+    #then the one chosen in the slider
+    thresholded_tracks=track_lengths[track_lengths[timepoint_selector]>track_length_selector]
+    track_ids=thresholded_tracks.index.tolist()
+    dff=dff.loc[dff[identifier_selector].isin(track_ids)]
     
     print(flag_filter)
     #print(type(flag_filter))
@@ -547,14 +531,13 @@ def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice,
 @app.callback(Output('image_dict', 'data'),
               [Input('migration_data', 'clickData')],
               [State('image_list','data'),
-               State('shared_data', 'data'),
                State('identifier_selector', 'value'),
                State('timepoint_selector', 'value'),
                State('unique_time_selector', 'value'),
                State('coordinate_selector', 'value'),
                State('pattern_storage', 'data'),
                State('flag_storage', 'data')],)
-def update_image_overlay(hoverData, image_dict, shared_data, 
+def update_image_overlay(hoverData, image_dict, 
                          identifier_selector, timepoint_selector, unique_time_selector,
                          coordinate_selector, pattern_storage, flag_storage):
 
@@ -568,7 +551,7 @@ def update_image_overlay(hoverData, image_dict, shared_data,
         data=pd.read_json(flag_storage, orient='split')
     #else from shared data
     else:
-        data=pd.read_json(shared_data, orient='split')
+        data=pd.DataFrame(df)
     #getting hovertext from hoverdata and removing discrepancies between hover text and filenames
     #(stripping of track_ID)
     ID_or=hoverData['points'][0]['hovertext']
@@ -751,15 +734,20 @@ def update_image_graph(value, image_dict, brightness):
     image=Image.open(img)
     enhancer_object = ImageEnhance.Brightness(image)
     image = enhancer_object.enhance(brightness)
+    imgByteArr = io.BytesIO()
+    image.save(imgByteArr, format='PNG')
+    encoded=base64.b64encode(imgByteArr.getvalue())
     #saving and opening
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    img_path=os.path.join(dir_path, 'temp.png')
-    image.save(img_path)
-   
-    
-    with open(img_path, 'rb') as f:
-        encoded=base64.b64encode(f.read())
-    #print('encoding complete')
+# =============================================================================
+#     dir_path = os.path.dirname(os.path.realpath(__file__))
+#     img_path=os.path.join(dir_path, 'temp.png')
+#     image.save(img_path)
+#    
+#     
+#     with open(img_path, 'rb') as f:
+#         encoded=base64.b64encode(f.read())
+#     #print('encoding complete')
+# =============================================================================
 
     return GD.image_graph('data:image/png;base64,{}'.format(encoded.decode()), x_C=x, y_C=y, 
                           image_info=image_dict[img]) 
