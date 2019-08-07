@@ -289,6 +289,6 @@ def image_graph(img, x_C=1024, y_C=1024, image_info=[0, 0, 0], ID=''):
     fig.update_yaxes(visible=False, range=[0, y_C])
     fig.update_layout({'clickmode':'event+select'})
     
-    print('image being displayed')
+    #print('image being displayed')
     return fig
 #/Volumes/imaging.data/Max/REF52/beta_pix/pix_10/cp.out1/output/    

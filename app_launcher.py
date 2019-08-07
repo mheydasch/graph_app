@@ -523,7 +523,7 @@ def plot_graph(n_clicks, graph_selector, classifier_choice,
         fig=graph_options[graph_selector](dat=dff, classifier_column=classifier_choice, 
                             identifier_column=identifier_selector,
                             timepoint_column=timepoint_selector, data_column=data_selector, 
-                            distance_filter=distance_filter, unique_time_selector=unique_time_selector, testmode=True)
+                            distance_filter=distance_filter, unique_time_selector=unique_time_selector, testmode=False)
         graph_storage.update({graph_selector:fig})
         return fig, graph_storage
 
@@ -662,7 +662,7 @@ def update_image_overlay(hoverData, image_dict,
  
     #print(AD.take(5, loaded_dict.items())) 
     print('encoding complete')
-    return json.dumps(loaded_dict)
+    return loaded_dict
 
 #%% flagging framework
 @app.callback([Output('click-data', 'children'),
@@ -693,7 +693,7 @@ def display_click_data(clickData, image_overlay):
 #and adjusts min and max values of the track_length_selector slider as first output
 #and the marks on the slider as second output
 def get_image_timepoints(image_dict):
-    image_dict=json.loads(image_dict)
+    #image_dict=json.loads(image_dict)
     max_timepoint=len(image_dict.keys())-1
     marks={}
     for m in range(0, max_timepoint, 5):
@@ -720,10 +720,9 @@ def update_image_graph(value, image_dict, brightness):
     brightness of the image accordingly.
     '''
     
-    image_dict=json.loads(image_dict)
+    #image_dict=json.loads(image_dict)
     #print(AD.take(5, image_dict.items()))
     img=list(image_dict.keys())[value+1]
-    print(img)
     #retrieving image shape from dictionary
     x=image_dict['shape'][0]
     y=image_dict['shape'][1]
@@ -737,17 +736,6 @@ def update_image_graph(value, image_dict, brightness):
     imgByteArr = io.BytesIO()
     image.save(imgByteArr, format='PNG')
     encoded=base64.b64encode(imgByteArr.getvalue())
-    #saving and opening
-# =============================================================================
-#     dir_path = os.path.dirname(os.path.realpath(__file__))
-#     img_path=os.path.join(dir_path, 'temp.png')
-#     image.save(img_path)
-#    
-#     
-#     with open(img_path, 'rb') as f:
-#         encoded=base64.b64encode(f.read())
-#     #print('encoding complete')
-# =============================================================================
 
     return GD.image_graph('data:image/png;base64,{}'.format(encoded.decode()), x_C=x, y_C=y, 
                           image_info=image_dict[img]) 
@@ -756,11 +744,11 @@ def update_image_graph(value, image_dict, brightness):
 @app.callback(Output('download-link', 'href'),
               [Input('flag_storage', 'data')],)
                              
-def update_download_link(shared_data):
+def update_download_link(flag_storage):
     csv_string=''
     try: 
-        data=pd.read_json(shared_data, orient='split')
-        type(shared_data)
+        data=pd.DataFrame.from_dict(flag_storage)
+        type(flag_storage)
         csv_string = data.to_csv(index=False, encoding='utf-8')
         csv_string = "data:text/csv;charset=utf-8," + urllib.parse.quote(csv_string)
     except Exception as e:
