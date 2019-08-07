@@ -274,3 +274,9 @@ def flag_filter():
             options=[{'label':'placeholder', 'value':'placeholder'}],
             multi=True,
             )
+def plot_hider():
+        return dcc.RadioItems(options=[
+        {'label' : 'Yes', 'value': 'Yes'}, 
+        {'label': 'No', 'value' : 'No'}], 
+        value='No', 
+        id='plot_hider')

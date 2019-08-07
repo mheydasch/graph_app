@@ -127,7 +127,12 @@ app.layout = html.Div([
         ], className='row'),
         html.P('Do you want to reuse a previously created instance of the graph, if available?'),
         MD.graph_reuse(),
-        MD.plot_button()], className='six columns'
+        MD.plot_button(),
+        html.P('Do you want to hide plots?'),
+        MD.plot_hider(),
+        ], className='six columns'
+        
+        
     )], className='row'),
 
 
@@ -143,9 +148,10 @@ app.layout = html.Div([
                      #calling the graph 
                      children= [html.Div([
                                      #graph for showing data
-                                     html.Div([dcc.Graph(id='migration_data'),
-                                               #MD.save_button()
-                                               ],
+                                     html.Div([html.P('Graph Display: '),
+                                               html.Div([dcc.Graph(id='migration_data')],
+                                                        id='graph_div'),
+                                               ], 
                                           className= 'six columns'),
                                                #graph for showing the image
                                      html.Div([dcc.Graph(id='image-overlay'),
@@ -198,12 +204,12 @@ app.layout = html.Div([
     html.Div(id='shared_data', style={'display':'none'}),
     #holds the unfiltered dataframe with user added flags
     html.Div(id='flag_storage', style={'display':'none'}),
-    #holding the type of the uploaded images
-    html.Div(id='image_type', style={'display':'none'}),
     #holding the uploaded images
     html.Div(id='image_list', style={'display':'none'}),
     #holds graphs after they have been created for faster access
     html.Div(id='graph_storage', style={'display':'none'}),
+    #stores the dictionary of images
+    html.Div(id='image_dict', style={'display':'none'}),
     #stores raw click data to be retrieved by update_flags
     html.Div(id='click_data_storage', style={'display':'none'}),
     #stores the patterns for the ID
@@ -345,7 +351,6 @@ def update_images(n_clicks, folder):
                 image_dict.update({img_key:img_path})
                 #i_dirs.append(os.path.join(root, img)) 
                 
-    #print(image_dict)
     print(AD.take(5, image_dict.items()))
     print('images uploaded')
     return image_dict
@@ -357,7 +362,7 @@ def update_images(n_clicks, folder):
 #gets triggered when the pattern submit button is pressed and simply
 #stores the submitted regex pattern
 def update_ID_pattern(n_clicks, value, ):
-    print(value, 'submitted')
+    #print(value, 'submitted')
     
     return [str(value)], 
     
@@ -457,11 +462,11 @@ def update_flags(n_clicks, identifier_selector,
         #the selected timepoint
         if flag_options=='single':
             dff.loc[dff[unique_time_selector]==ID, 'flags']=track_comment
-            print('single')
+            #print('single')
         #if 'all' remove the timepoint component from the string and add the comment
         #to all datapoints with that ID like 'WB2_S1324_E4'
         if flag_options=='all':
-           print('all')
+           #print('all')
            #pattern=re.compile('_T.*')
            try:
                Timepoint=re.search(pattern, ID).group('Timepoint')
@@ -507,6 +512,7 @@ def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice,
     if graph_storage==None or graph_reuse=='no':
         graph_storage={}
     #data is read from the shared data div
+    
     dff=pd.read_json(shared_data, orient='split')
     #try to read flag sotrage. more elegant conditioning required here in the future
     try:
@@ -514,7 +520,7 @@ def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice,
     except:
         pass
     print(flag_filter)
-    print(type(flag_filter))
+    #print(type(flag_filter))
     
     if flag_filter is not None:
         for i in flag_filter:
@@ -534,37 +540,36 @@ def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice,
         graph_storage.update({graph_selector:fig})
         return fig, graph_storage
 
-#%% atm changing to click data showing full video 
-@app.callback(Output('image_list', 'children'),
+#%% 
+@app.callback(Output('image_dict', 'children'),
               [Input('migration_data', 'clickData')],
               [State('image_list','component'),
-               State('image_type', 'children'),
                State('shared_data', 'children'),
                State('identifier_selector', 'value'),
                State('timepoint_selector', 'value'),
                State('unique_time_selector', 'value'),
                State('coordinate_selector', 'value'),
-               State('pattern_storage', 'children')],)
-def update_image_overlay(hoverData, image_dict, image_type, shared_data, 
+               State('pattern_storage', 'children'),
+               State('flag_storage', 'children')],)
+def update_image_overlay(hoverData, image_dict, shared_data, 
                          identifier_selector, timepoint_selector, unique_time_selector,
-                         coordinate_selector, pattern_storage):
+                         coordinate_selector, pattern_storage, flag_storage):
 
     print('pattern storage: ', pattern_storage)
     pattern=re.compile(pattern_storage[0])
     #Error message if no images have been uploaded
     if len(image_dict)==0:
         print('No images have been uploaded')
-    data=pd.read_json(shared_data, orient='split')
+    #read data from flag_storage if exists    
+    if flag_storage != None:
+        data=pd.read_json(flag_storage, orient='split')
+    #else from shared data
+    else:
+        data=pd.read_json(shared_data, orient='split')
     #getting hovertext from hoverdata and removing discrepancies between hover text and filenames
     #(stripping of track_ID)
     ID_or=hoverData['points'][0]['hovertext']
     try:
-        #exclusion criterium if timepoint is already there
-        #exclusion=re.compile('_E+.*')
-        #track_pattern=re.compile('_E.+?(?=\_)')
-        #taken from hovertext should be something like 'WB2_S1324_E4_T2'
-
-
         #getting the different components of the ID. Such as:
         #'WB2' '_S0520' '_E3' '_T40'         
         Site_ID, track_ID, Timepoint =re.search(pattern, ID_or).group(
@@ -573,16 +578,13 @@ def update_image_overlay(hoverData, image_dict, image_type, shared_data,
         #exclusion criterium if timepoint is already there
         exclusion=track_ID+Timepoint
         #print(Timepoint, track_ID, Wellname, Sitename)
-        #getting the track ID of the individual cell. Something like '_E4'
-        #track_ID=re.search(track_pattern, ID_or).group()
-
         
-        print('track_ID: ', track_ID)
+        #print('track_ID: ', track_ID)
         #getting the ID to the images by stripping off extensions
         #something like 'WB2_S1324
         ID=ID_or.replace(exclusion,'')
-        print('ID_or: ', ID_or)
-        print('ID: ', ID)
+        #print('ID_or: ', ID_or)
+        #print('ID: ', ID)
     except AttributeError:       
         print('Error: unrecognized pattern')
 # =============================================================================
@@ -649,11 +651,15 @@ def update_image_overlay(hoverData, image_dict, image_type, shared_data,
             print('no segmentation found for', i)
             x_coord=0.1
             y_coord=0.1
+        if 'flags' in data.columns:
+            flag=data[data[unique_time_selector]==tracking_ID]['flags']
+        else:
+            flag='none'
         
         
         #getting part of the dataframe that is from the current timepoint as well
         #get the time, something like _T1
-        print('i: ', i)
+        #print('i: ', i)
         Time_ID= i.replace(Site_ID, '')
         #gets only the numeric value of the timepoint
         Time= re.search(timenumber_pattern, Time_ID).group()
@@ -661,12 +667,14 @@ def update_image_overlay(hoverData, image_dict, image_type, shared_data,
         alt_img={}
         for index, row in timepoint_data.iterrows():
             if int(row[coordinate_selector[0]])!=x_coord:
-                alt_img.update({row[unique_time_selector]:[int(row[coordinate_selector[0]]), int(row[coordinate_selector[1]])]})
+                if 'flags' in data.columns:
+                    flag=row['flags']
+                alt_img.update({row[unique_time_selector]:[int(row[coordinate_selector[0]]), int(row[coordinate_selector[1]]), flag]})
 
         
-        loaded_dict.update({img:[x_coord, y_coord, {'alt_cells': alt_img}, tracking_ID]})
+        loaded_dict.update({img:[x_coord, y_coord, {'alt_cells': alt_img}, tracking_ID, flag]})
  
-    print(AD.take(5, loaded_dict.items())) 
+    #print(AD.take(5, loaded_dict.items())) 
     print('encoding complete')
     return json.dumps(loaded_dict)
 
@@ -685,7 +693,7 @@ def display_click_data(clickData, image_overlay):
         data=image_overlay
     if ctx.triggered[0]['prop_id']=='migration_data.clickData':
         data=clickData
-    print(data)
+    #print(data)
     return json.dumps(data, indent=2), data
 
 
@@ -694,7 +702,7 @@ def display_click_data(clickData, image_overlay):
 @app.callback([Output('image_slider', 'max'),
              Output('image_slider', 'marks'),
              Output('image_slider_output', 'value')],
-             [Input('image_list', 'children')])
+             [Input('image_dict', 'children')])
 #gets the minimum and maxium value of the timepoint column as selected
 #and adjusts min and max values of the track_length_selector slider as first output
 #and the marks on the slider as second output
@@ -707,12 +715,13 @@ def get_image_timepoints(image_dict):
     image_slider_output='Image{} selected'.format(image_dict)
     return max_timepoint, marks, image_slider_output  
 #updating image graph
-@app.callback([Output('image-overlay', 'figure')],
+
+#updating image graph
+@app.callback(Output('image-overlay', 'figure'),
               #Output('histogram', 'figure')],
-              [Input('image_slider', 'value'),
-               ],
-              [State('image_list', 'children'),
-               State('brightness_slider', 'value')])
+              [Input('image_slider', 'value'),],
+              [State('image_dict', 'children'),
+               State('brightness_slider', 'value'),])
 
 def update_image_graph(value, image_dict, brightness):
     '''
@@ -726,7 +735,7 @@ def update_image_graph(value, image_dict, brightness):
     '''
     
     image_dict=json.loads(image_dict)
-    print(AD.take(5, image_dict.items()))
+    #print(AD.take(5, image_dict.items()))
     img=list(image_dict.keys())[value+1]
     print(img)
     #retrieving image shape from dictionary
@@ -747,10 +756,10 @@ def update_image_graph(value, image_dict, brightness):
     
     with open(img_path, 'rb') as f:
         encoded=base64.b64encode(f.read())
-    print('encoding complete')
+    #print('encoding complete')
 
     return GD.image_graph('data:image/png;base64,{}'.format(encoded.decode()), x_C=x, y_C=y, 
-                          image_info=image_dict[img]), #ID=ID, ), #GD.histogram(pix_count)
+                          image_info=image_dict[img]) 
 
 #%% Download csv file
 @app.callback(Output('download-link', 'href'),
@@ -767,7 +776,14 @@ def update_download_link(shared_data):
         print(e)
     return csv_string
 
-
+@app.callback(Output('graph_div', 'style'),
+                [Input('plot_hider' ,'value')])
+def hide_graphs(value):
+    if value=='Yes':
+        return {'display':'none'}
+    if value=='No':
+        return {'display':'block'}
+    
 
 
 

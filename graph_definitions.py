@@ -13,6 +13,7 @@ Holds the graph definitions for the app.
 import chart_studio.plotly
 import plotly.graph_objects as go
 
+import pandas as pd
 from plotly.subplots import make_subplots
 import os
 import sys
@@ -28,8 +29,8 @@ def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_colum
     testmode: If testomde is set to True only the first 10 items will be used in the graph
     '''    
     print('creating migration lineplot')
-    print(identifier_column)
-    print(type(identifier_column))
+    #print(identifier_column)
+    #print(type(identifier_column))
     #cells=list(dat[identifier_column].unique())
     #dat[unique_time_selector]=dat[identifier_column]+'_T'+dat[timepoint_column].astype('str')
 
@@ -148,8 +149,8 @@ def time_series(dat=[], classifier_column='', identifier_column='',
     testmode: If testomde is set to True only the first 10 items will be used in the graph
     '''  
     print('Creating time series')
-    print(identifier_column)
-    print(type(identifier_column))
+    #print(identifier_column)
+    #print(type(identifier_column))
     #cells=list(dat[identifier_column].unique())
     dat[unique_time_selector]=dat[identifier_column]+'_T'+dat[timepoint_column].astype('str')
 
@@ -217,7 +218,7 @@ def time_series(dat=[], classifier_column='', identifier_column='',
 #%% plots displaying other things
 def image_graph(img, x_C=1024, y_C=1024, image_info=[0, 0, 0], ID=''):
     '''
-    this graph is supposed to show an image an mark a point on it.
+    this graph is supposed to show an image and mark a point on it.
     '''    
     #print(image_info)
     X_S=image_info[0]
@@ -238,18 +239,18 @@ def image_graph(img, x_C=1024, y_C=1024, image_info=[0, 0, 0], ID=''):
             marker_opacity=0
         )
             )
-    #add cell marker    
+
     fig.add_trace(go.Scatter(
-            hovertext=ID,
-            customdata=[ID],
-            #name=ID,
-            x=[X_S],
-            #images start with y0 at the top, graphs with y0 at the bottom
-            y=[abs(Y_S-y_C)],
-            mode='markers',
-            marker_opacity=1,
-            marker=dict(color='red')
-            ))
+    hovertext=ID,
+    customdata=[ID],
+    #name=ID,
+    x=[X_S],
+    #images start with y0 at the top, graphs with y0 at the bottom
+    y=[abs(Y_S-y_C)],
+    mode='markers',
+    marker_opacity=1,
+    marker=dict(color='red')
+    ))
     #displaying markers over all other tracked cells
     for i in list(image_info[2]['alt_cells'].keys()):
         fig.add_trace(go.Scatter(
@@ -264,7 +265,9 @@ def image_graph(img, x_C=1024, y_C=1024, image_info=[0, 0, 0], ID=''):
                 
                 )
         )
+        
     fig.update_layout(
+            showlegend=False,
             images=[
                     go.layout.Image(source=img,
                                     xref='x',
@@ -287,16 +290,5 @@ def image_graph(img, x_C=1024, y_C=1024, image_info=[0, 0, 0], ID=''):
     fig.update_layout({'clickmode':'event+select'})
     
     print('image being displayed')
-    return fig
-
-def histogram(pixelcount):
-    '''
-    displays the histogram of the current image
-    '''
-
-    fig=go.Figure()
-    fig.add_trace(go.Histogram(x=pixelcount,
-                               xbins=dict(size=5)))
-
     return fig
 #/Volumes/imaging.data/Max/REF52/beta_pix/pix_10/cp.out1/output/    
