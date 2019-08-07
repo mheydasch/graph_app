@@ -201,19 +201,20 @@ app.layout = html.Div([
 
      #hidden divs for storing data
     #holds the dataframe after filtering by track length
-    html.Div(id='shared_data', style={'display':'none'}),
+    dcc.Store(id='shared_data', storage_type='local'),
     #holds the unfiltered dataframe with user added flags
-    html.Div(id='flag_storage', style={'display':'none'}),
-    #holding the uploaded images
-    html.Div(id='image_list', style={'display':'none'}),
-    #holds graphs after they have been created for faster access
-    html.Div(id='graph_storage', style={'display':'none'}),
-    #stores the dictionary of images
-    html.Div(id='image_dict', style={'display':'none'}),
-    #stores raw click data to be retrieved by update_flags
-    html.Div(id='click_data_storage', style={'display':'none'}),
+    dcc.Store(id='flag_storage', storage_type='session'),
     #stores the patterns for the ID
-    html.Div(id='pattern_storage', style={'display':'none'}),
+    dcc.Store(id='pattern_storage', storage_type='local'),
+    #holding the uploaded images
+    dcc.Store(id='image_list', storage_type='session'),
+    #holds graphs after they have been created for faster access
+    dcc.Store(id='graph_storage', storage_type='session'),
+    #stores the dictionary of images
+    dcc.Store(id='image_dict', storage_type='memory'),
+    #stores raw click data to be retrieved by update_flags
+    dcc.Store(id='click_data_storage', storage_type='memory'),
+
 
 ])
     
@@ -318,7 +319,7 @@ def update_dropdown(contents):
     return col_labels, identifier_cols, timepoint_cols, data_cols, unique_time_columns, coordinates
 
 #%% update after image folder got parsed 
-@app.callback(Output('image_list', 'component'),
+@app.callback(Output('image_list', 'data'),
               [Input('Folder_submit', 'n_clicks')],
               [State('Image_folder', 'value'),])
 def update_images(n_clicks, folder):
@@ -355,7 +356,7 @@ def update_images(n_clicks, folder):
     print('images uploaded')
     return image_dict
 #%% ID pattern recognition
-@app.callback([Output('pattern_storage', 'children'),],
+@app.callback([Output('pattern_storage', 'data'),],
               [Input('ID_submit', 'n_clicks')],
               [State('ID_pattern', 'value'),])
 
@@ -371,10 +372,10 @@ def update_ID_pattern(n_clicks, value, ):
 #%%
 #gets called when you select a value on the track_length_selector slider
 @app.callback([Output('track_length_output', 'children'),
-              Output('shared_data', 'children')],
+              Output('shared_data', 'data')],
               [Input('track_length_selector', 'value'),
                Input('flag_filter', 'value')],
-              [State('flag_storage', 'children'),
+              [State('flag_storage', 'data'),
                State('identifier_selector', 'value'),
                State('timepoint_selector', 'value')
                ])
@@ -410,18 +411,19 @@ def filter_graph(track_length_selector, flag_filter, flag_storage, identifier_se
     return display_string, dff
 
 #%% storing flags to flag sotrage once the submit button is pressed
-@app.callback([Output('flag_storage', 'children'),
-              Output('flag_filter', 'options')],
+@app.callback([Output('flag_storage', 'data'),
+              Output('flag_filter', 'options'),
+              Output('shared_data', 'clear_data')],
               [Input('comment_submit', 'n_clicks')],
               [State('identifier_selector', 'value'),
                State('track_comment', 'value'),
                State('migration_data', 'clickData'),
                State('flag_options', 'value'),
                State('flag_filter', 'options'),
-               State('flag_storage', 'children'),
-               State('click_data_storage', 'children'),
+               State('flag_storage', 'data'),
+               State('click_data_storage', 'data'),
                State('unique_time_selector', 'value'),
-               State('pattern_storage', 'children')
+               State('pattern_storage', 'data')
                ])
 def update_flags(n_clicks, identifier_selector, 
                  track_comment, clickData, flag_options, flag_filter, 
@@ -481,7 +483,7 @@ def update_flags(n_clicks, identifier_selector,
         print('flags', flags)
     flag_storage=dff.to_json(date_format='iso', orient='split') 
     print('flag_filter', flag_filter)    
-    return flag_storage, flag_filter
+    return flag_storage, flag_filter, True
 
 #%% update graph 
 
@@ -490,20 +492,20 @@ def update_flags(n_clicks, identifier_selector,
 #and timepoint_selector and feeds it as options to the graph.
 #it takes the data from the hidden div 'shared_data' as input data for the graph
 @app.callback([Output('migration_data', 'figure'),
-               Output('graph_storage', 'component')],
+               Output('graph_storage', 'data')],
               [Input('plot_button', 'n_clicks')],
               [State('graph_selector', 'value'),
-               State('shared_data', 'children'),
+               State('shared_data', 'data'),
                State('classifier_choice', 'value'),
                State('identifier_selector', 'value'),
                State('timepoint_selector', 'value'),
                State('data_selector', 'value'),
                State('distance_filter', 'value'),
-               State('graph_storage', 'component'),
+               State('graph_storage', 'data'),
                State('graph_reuse', 'value'),
                State('flag_filter', 'value'),
                State('unique_time_selector', 'value'),
-               State('flag_storage', 'value')])
+               State('flag_storage', 'data')])
 
 def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice,
                identifier_selector, timepoint_selector, data_selector, distance_filter, 
@@ -513,12 +515,13 @@ def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice,
         graph_storage={}
     #data is read from the shared data div
     
-    dff=pd.read_json(shared_data, orient='split')
-    #try to read flag sotrage. more elegant conditioning required here in the future
-    try:
+    
+    #try to read flag sotrage.
+    if flag_storage != None:
         dff=pd.read_json(flag_storage, orient='split')
-    except:
-        pass
+    else:
+        dff=pd.read_json(shared_data, orient='split')
+    
     print(flag_filter)
     #print(type(flag_filter))
     
@@ -541,16 +544,16 @@ def plot_graph(n_clicks, graph_selector, shared_data, classifier_choice,
         return fig, graph_storage
 
 #%% 
-@app.callback(Output('image_dict', 'children'),
+@app.callback(Output('image_dict', 'data'),
               [Input('migration_data', 'clickData')],
-              [State('image_list','component'),
-               State('shared_data', 'children'),
+              [State('image_list','data'),
+               State('shared_data', 'data'),
                State('identifier_selector', 'value'),
                State('timepoint_selector', 'value'),
                State('unique_time_selector', 'value'),
                State('coordinate_selector', 'value'),
-               State('pattern_storage', 'children'),
-               State('flag_storage', 'children')],)
+               State('pattern_storage', 'data'),
+               State('flag_storage', 'data')],)
 def update_image_overlay(hoverData, image_dict, shared_data, 
                          identifier_selector, timepoint_selector, unique_time_selector,
                          coordinate_selector, pattern_storage, flag_storage):
@@ -680,7 +683,7 @@ def update_image_overlay(hoverData, image_dict, shared_data,
 
 #%% flagging framework
 @app.callback([Output('click-data', 'children'),
-              Output('click_data_storage', 'children')],
+              Output('click_data_storage', 'data')],
               [Input('migration_data', 'clickData'),
                Input('image-overlay', 'clickData')],)    
 def display_click_data(clickData, image_overlay):
@@ -702,7 +705,7 @@ def display_click_data(clickData, image_overlay):
 @app.callback([Output('image_slider', 'max'),
              Output('image_slider', 'marks'),
              Output('image_slider_output', 'value')],
-             [Input('image_dict', 'children')])
+             [Input('image_dict', 'data')])
 #gets the minimum and maxium value of the timepoint column as selected
 #and adjusts min and max values of the track_length_selector slider as first output
 #and the marks on the slider as second output
@@ -720,7 +723,7 @@ def get_image_timepoints(image_dict):
 @app.callback(Output('image-overlay', 'figure'),
               #Output('histogram', 'figure')],
               [Input('image_slider', 'value'),],
-              [State('image_dict', 'children'),
+              [State('image_dict', 'data'),
                State('brightness_slider', 'value'),])
 
 def update_image_graph(value, image_dict, brightness):
@@ -763,7 +766,7 @@ def update_image_graph(value, image_dict, brightness):
 
 #%% Download csv file
 @app.callback(Output('download-link', 'href'),
-              [Input('flag_storage', 'children')],)
+              [Input('flag_storage', 'data')],)
                              
 def update_download_link(shared_data):
     csv_string=''
