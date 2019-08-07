@@ -411,7 +411,7 @@ def update_flags(n_clicks, identifier_selector,
     print('pattern storage: ', pattern_storage)
     pattern=re.compile(pattern_storage[0])    
     if flag_storage != None: 
-        flag_storage=pd.read_json(flag_storage, orient='split')
+        flag_storage=pd.DataFrame.from_dict(flag_storage)
     else:
         dff=pd.DataFrame(df)
         print('flag_storage empty')
@@ -458,7 +458,7 @@ def update_flags(n_clicks, identifier_selector,
         flags=list(dff['flags'].unique())
         flag_filter=[{'label' :k, 'value' :k} for k in flags]
         print('flags', flags)
-    flag_storage=dff.to_json(date_format='iso', orient='split') 
+    flag_storage=dff.to_dict() 
     print('flag_filter', flag_filter)    
     return flag_storage, flag_filter
 
@@ -496,7 +496,7 @@ def plot_graph(n_clicks, graph_selector, classifier_choice,
     
     #try to read flag sotrage.
     if flag_storage != None:
-        dff=pd.read_json(flag_storage, orient='split')
+        dff=pd.DataFrame.from_dict(flag_storage)
     else:
         dff=pd.DataFrame(df)
     track_lengths=pd.DataFrame(dff.groupby(identifier_selector)[timepoint_selector].count())
@@ -548,7 +548,7 @@ def update_image_overlay(hoverData, image_dict,
         print('No images have been uploaded')
     #read data from flag_storage if exists    
     if flag_storage != None:
-        data=pd.read_json(flag_storage, orient='split')
+        data=pd.DataFrame.from_dict(flag_storage)
     #else from shared data
     else:
         data=pd.DataFrame(df)
