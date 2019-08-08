@@ -123,7 +123,7 @@ def track_length_selector():
     '''
     return dcc.Input(placeholder='Enter a value...',
                      type='number',
-                     value=5,
+                     value=20,
                      id='track_length_selector')
 # =============================================================================
 # def track_length_selector():
@@ -147,7 +147,7 @@ def distance_filter():
     '''
     return dcc.Input(placeholder='Enter a value...',
                      type='number',
-                     value=10,
+                     value=30,
                      id='distance_filter')
 def datatype_selector():
     return dcc.RadioItems(options=[
@@ -188,10 +188,15 @@ def timeless_ID_pattern():
 def ID_submit():
     return html.Button(id='ID_submit', n_clicks=0, children='Submit pattern')
     
-    
+def save_path():
+    return dcc.Textarea(
+            placeholder='save the datatable at the following location',
+            value='/Users/max/Desktop/Office/Phd/pythoncode/graph_app/flagged_datatable.csv',
+            style={'width':'100%'},
+            id='save_path')    
 
 def save_button():
-    return html.Button(id='save_df', n_clicks=0, children='Download datatable', style={'display':'none'})
+    return html.Button(id='save_button', n_clicks=0, children='Download datatable')
 
 #%% images
 
@@ -280,3 +285,9 @@ def plot_hider():
         {'label': 'No', 'value' : 'No'}], 
         value='No', 
         id='plot_hider')
+def exclude_seen():
+        return dcc.RadioItems(options=[
+        {'label' : 'Yes', 'value': 'Yes'}, 
+        {'label': 'No', 'value' : 'No'}], 
+        value='No', 
+        id='exclude_seen')

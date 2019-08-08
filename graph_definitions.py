@@ -241,20 +241,20 @@ def image_graph(img, x_C=1024, y_C=1024, image_info=[0, 0, 0], ID=''):
             )
 
     fig.add_trace(go.Scatter(
-    hovertext=ID,
-    customdata=[ID],
-    #name=ID,
-    x=[X_S],
-    #images start with y0 at the top, graphs with y0 at the bottom
-    y=[abs(Y_S-y_C)],
-    mode='markers',
-    marker_opacity=1,
-    marker=dict(color='red')
-    ))
+        hovertext=ID,
+        customdata=[ID],
+        name=image_info[4],
+        x=[X_S],
+        #images start with y0 at the top, graphs with y0 at the bottom
+        y=[abs(Y_S-y_C)],
+        mode='markers',
+        marker_opacity=1,
+        marker=dict(color='red')
+        ))
     #displaying markers over all other tracked cells
     for i in list(image_info[2]['alt_cells'].keys()):
         fig.add_trace(go.Scatter(
-                #name=i,
+                name=image_info[2]['alt_cells'][i][2],
                 hovertext=i,
                 customdata=[i],
                 x=[image_info[2]['alt_cells'][i][0]],
@@ -267,7 +267,7 @@ def image_graph(img, x_C=1024, y_C=1024, image_info=[0, 0, 0], ID=''):
         )
         
     fig.update_layout(
-            showlegend=False,
+            showlegend=True,
             images=[
                     go.layout.Image(source=img,
                                     xref='x',

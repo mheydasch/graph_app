@@ -11,6 +11,8 @@ import io
 from PIL import Image
 from PIL import ImageEnhance
 import urllib.parse
+from flask_caching import Cache
+import uuid
 
 import dash
 from dash.dependencies import Input, Output, State
@@ -51,6 +53,12 @@ other functions for calculations on data are defined in algorythm_definitions.py
 
 
 #%% caching
+cache = Cache(app.server, config={
+    'CACHE_TYPE': 'filesystem',
+    'CACHE_DIR': 'cache-directory',
+    'CACHE_THRESHOLD': 5  # should be equal to maximum number of active users
+})
+
 
 
 #%% app upload
@@ -130,6 +138,8 @@ app.layout = html.Div([
         MD.plot_button(),
         html.P('Do you want to hide plots?'),
         MD.plot_hider(),
+        html.P('Do you want exclude flagged images from the plots?'),
+        MD.exclude_seen(),
         ], className='six columns'
         
         
@@ -175,13 +185,17 @@ app.layout = html.Div([
                                                 MD.comment_submit(),
                                                 html.P('Do you want to flag all, or a single timepoint?'),
                                                 MD.flag_options(),
-                                                html.A(
-                                                        'Download Data',
-                                                        id='download-link',
-                                                        download="rawdata.csv",
-                                                        href="",
-                                                        target="_blank"
-                                                        ),
+                                                MD.save_path(),
+                                                MD.save_button(),
+# =============================================================================
+#                                                 html.A(
+#                                                         'Download Data',
+#                                                         id='download-link',
+#                                                         download="rawdata.csv",
+#                                                         href="",
+#                                                         target="_blank"
+#                                                         ),
+# =============================================================================
                                                   ],className='six columns', )
                                           
                                                
@@ -201,20 +215,22 @@ app.layout = html.Div([
 
      #hidden divs for storing data
     #holds the dataframe after filtering by track length
-    dcc.Store(id='shared_data', storage_type='local'),
+    #dcc.Store(id='shared_data', storage_type='local'),
     #holds the unfiltered dataframe with user added flags
-    dcc.Store(id='flag_storage', storage_type='session'),
+    dcc.Store(id='session_id', storage_type='session', data=str(uuid.uuid4())),
+    dcc.Store(id='flag_storage', storage_type='memory'),
     #stores the patterns for the ID
-    dcc.Store(id='pattern_storage', storage_type='local'),
+    dcc.Store(id='pattern_storage', storage_type='memory'),
     #holding the uploaded images
-    dcc.Store(id='image_list', storage_type='session'),
+    dcc.Store(id='image_list', storage_type='memory'),
     #holds graphs after they have been created for faster access
-    dcc.Store(id='graph_storage', storage_type='session'),
+    dcc.Store(id='graph_storage', storage_type='memory'),
     #stores the dictionary of images
     dcc.Store(id='image_dict', storage_type='memory'),
     #stores raw click data to be retrieved by update_flags
     dcc.Store(id='click_data_storage', storage_type='memory'),
-
+    #dcc.Store(id='test_storage', storage_type='session'),
+    #dcc.Store(id='df_storage', storage_type='session'),
 
 ])
     
@@ -249,36 +265,21 @@ def parse_contents(contents, filename, date):
         html.H5(filename),
         html.H6(datetime.datetime.fromtimestamp(date)),
 
-        MD.generate_table(df),
+        MD.generate_table(df[0:20]),
         #horizontal line
         html.Hr() ])
     
+# =============================================================================
+#         dcc.Store(id='df_storage', storage_type='session', 
+#                   data=df.to_json(date_format='iso', orient='split'))])
+# =============================================================================
     
-def parse_images(contents, filename, date):
-    '''
-    parses content of the images
-    '''
-    #print(filename)
-    return html.Div([
-        html.H5(filename),
-        html.H6(datetime.datetime.fromtimestamp(date)),
-
-        # HTML images accept base64 encoded strings in the same format
-        # that is supplied by the upload
-        html.Img(src=contents),
-        html.Hr(),
-        html.Div('Raw Content'),
-        html.Pre(contents[0:200] + '...', style={
-            'whiteSpace': 'pre-wrap',
-            'wordBreak': 'break-all'
-        })
-        
-    ])
 
 
 #%% update after data upload
          
-@app.callback(Output('output-data-upload', 'children'),              
+@app.callback(Output('output-data-upload', 'children'),
+#              
               [Input('upload-data', 'contents')],
               [State('upload-data', 'filename'),
                State('upload-data', 'last_modified')])
@@ -292,6 +293,8 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
             parse_contents(c, n, d) for c, n, d in
             zip(list_of_contents, list_of_names, list_of_dates)]
         return children
+
+
 
 #%% updating dropdown menus
 #gets called when data is uploaded. It does not actually use the input
@@ -307,6 +310,8 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
               [Input('output-data-upload', 'children')])
 
 def update_dropdown(contents):
+    print('updating menus')
+    #df=pd.read_json(contents, orient='split')
     columns=df.columns
     col_labels=[{'label' :k, 'value' :k} for k in columns]
     identifier_cols=col_labels
@@ -409,33 +414,31 @@ def update_flags(n_clicks, identifier_selector,
                  flag_storage, click_data_storage, unique_time_selector, pattern_storage):
     print(track_comment)
     print('pattern storage: ', pattern_storage)
+    #get patterns from user input
     pattern=re.compile(pattern_storage[0])    
+    #if flag storage not empty load it
     if flag_storage != None: 
-        flag_storage=pd.DataFrame.from_dict(flag_storage)
+        dff=pd.read_csv(flag_storage)
+    #otherwise load global dataframe
     else:
         dff=pd.DataFrame(df)
         print('flag_storage empty')
-    
-    #flagging framework
+    #if click_data is provided
     if click_data_storage!=None:
         
         print('clickdata: ',click_data_storage)
-        
+        #get relevant click data
         if 'customdata' in click_data_storage['points'][0]:
             ID=click_data_storage['points'][0]['customdata']
         if 'hovertext' in click_data_storage['points'][0]: 
             ID=click_data_storage['points'][0]['hovertext']
 
         print('ID: ', ID)
-        #read previously filtered data frame
+        #if dataframe does not have the 'flag' column create it
         #create a new column and fill it
-        try:
-            dff['flags']
-        except KeyError:
+        if 'flags' not in dff.columns:
             dff['flags']='None'
             print('flags resetted')
-        #get the unique ID from the hovertext
-        #ID=clickData['points'][0]['hovertext']
         
         #check flag options. If single, add the submitted comment only to 
         #the selected timepoint
@@ -446,7 +449,6 @@ def update_flags(n_clicks, identifier_selector,
         #to all datapoints with that ID like 'WB2_S1324_E4'
         if flag_options=='all':
            #print('all')
-           #pattern=re.compile('_T.*')
            try:
                Timepoint=re.search(pattern, ID).group('Timepoint')
                ID=ID.replace(Timepoint,'')
@@ -454,11 +456,17 @@ def update_flags(n_clicks, identifier_selector,
            except AttributeError:
                dff.loc[dff[identifier_selector]==ID, 'flags']=track_comment
 
-
+        #create a list of unique flags
         flags=list(dff['flags'].unique())
+        #create an options attribute of the flags for the flag_filter dropdwon menu
         flag_filter=[{'label' :k, 'value' :k} for k in flags]
         print('flags', flags)
-    flag_storage=dff.to_dict() 
+    #convert the dataframe to a dictionary for storage
+    #flag_storage=dff.to_dict() 
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    flag_storage=os.path.join(dir_path, 'temp.csv')
+    dff.to_csv(flag_storage)
+    
     print('flag_filter', flag_filter)    
     return flag_storage, flag_filter
 
@@ -482,21 +490,23 @@ def update_flags(n_clicks, identifier_selector,
                State('flag_filter', 'value'),
                State('unique_time_selector', 'value'),
                State('flag_storage', 'data'),
-               State('track_length_selector', 'value')])
+               State('track_length_selector', 'value'),
+               State('exclude_seen', 'value'),
+               State('pattern_storage', 'data')])
 
 def plot_graph(n_clicks, graph_selector, classifier_choice,
                identifier_selector, timepoint_selector, data_selector, distance_filter, 
                graph_storage, graph_reuse, flag_filter, unique_time_selector, flag_storage,
-               track_length_selector):
+               track_length_selector, exclude_seen, pattern_storage):
     #if the graph storage is empty an empty dictionary will be created
     if graph_storage==None or graph_reuse=='no':
         graph_storage={}
     #data is read from the shared data div
-    
+    pattern=re.compile(pattern_storage[0])
     
     #try to read flag sotrage.
     if flag_storage != None:
-        dff=pd.DataFrame.from_dict(flag_storage)
+        dff=pd.read_csv(flag_storage)
     else:
         dff=pd.DataFrame(df)
     track_lengths=pd.DataFrame(dff.groupby(identifier_selector)[timepoint_selector].count())
@@ -505,6 +515,22 @@ def plot_graph(n_clicks, graph_selector, classifier_choice,
     thresholded_tracks=track_lengths[track_lengths[timepoint_selector]>track_length_selector]
     track_ids=thresholded_tracks.index.tolist()
     dff=dff.loc[dff[identifier_selector].isin(track_ids)]
+    
+    exclude=[]
+    if exclude_seen=='Yes':
+        if 'flags' in dff.columns:
+            #for each flag in the data frame that is note None get the unique_time_selector
+            for i in dff[dff['flags']!='None'][unique_time_selector]:
+                #add the Site_ID to the list
+                exclude.append(re.search(pattern, i).group('Site_ID'))
+            for i in set(exclude):
+                print('excluded{}from the list'.format(i))
+                #for each item of the list get all items of the dataframe
+                #where i is not part of the unique time column 
+                dff=dff[dff[unique_time_selector].str.contains(i)!=True]
+        
+        
+        
     
     print(flag_filter)
     #print(type(flag_filter))
@@ -536,10 +562,11 @@ def plot_graph(n_clicks, graph_selector, classifier_choice,
                State('unique_time_selector', 'value'),
                State('coordinate_selector', 'value'),
                State('pattern_storage', 'data'),
-               State('flag_storage', 'data')],)
+               State('flag_storage', 'data'),
+               State('track_length_selector', 'value')],)
 def update_image_overlay(hoverData, image_dict, 
                          identifier_selector, timepoint_selector, unique_time_selector,
-                         coordinate_selector, pattern_storage, flag_storage):
+                         coordinate_selector, pattern_storage, flag_storage, track_length_selector):
 
     print('pattern storage: ', pattern_storage)
     pattern=re.compile(pattern_storage[0])
@@ -548,10 +575,16 @@ def update_image_overlay(hoverData, image_dict,
         print('No images have been uploaded')
     #read data from flag_storage if exists    
     if flag_storage != None:
-        data=pd.DataFrame.from_dict(flag_storage)
+        data=pd.read_csv(flag_storage)
     #else from shared data
     else:
         data=pd.DataFrame(df)
+    track_lengths=pd.DataFrame(data.groupby(identifier_selector)[timepoint_selector].count())
+    #filtering the track lengths by only selecting those with a track length higher,
+    #then the one chosen in the slider
+    thresholded_tracks=track_lengths[track_lengths[timepoint_selector]>track_length_selector]
+    track_ids=thresholded_tracks.index.tolist()
+    data=data.loc[data[identifier_selector].isin(track_ids)]
     #getting hovertext from hoverdata and removing discrepancies between hover text and filenames
     #(stripping of track_ID)
     ID_or=hoverData['points'][0]['hovertext']
@@ -640,7 +673,7 @@ def update_image_overlay(hoverData, image_dict,
         if 'flags' in data.columns:
             flag=data[data[unique_time_selector]==tracking_ID]['flags']
         else:
-            flag='none'
+            flag='None'
         
         
         #getting part of the dataframe that is from the current timepoint as well
@@ -741,19 +774,29 @@ def update_image_graph(value, image_dict, brightness):
                           image_info=image_dict[img]) 
 
 #%% Download csv file
-@app.callback(Output('download-link', 'href'),
-              [Input('flag_storage', 'data')],)
+@app.callback(Output('save_path', 'children'),
+              [Input('save_button', 'n_clicks')],
+              [State('flag_storage', 'data'),
+               State('save_path', 'value')],)
                              
-def update_download_link(flag_storage):
-    csv_string=''
-    try: 
-        data=pd.DataFrame.from_dict(flag_storage)
-        type(flag_storage)
-        csv_string = data.to_csv(index=False, encoding='utf-8')
-        csv_string = "data:text/csv;charset=utf-8," + urllib.parse.quote(csv_string)
-    except Exception as e:
-        print(e)
-    return csv_string
+def update_download_link(n_clicks, flag_storage, save_area):
+    print(save_area)
+    data=pd.read_csv(flag_storage)
+    data.to_csv(save_area)
+    print('file saved under', save_area)
+    return 'Download datatable'
+    
+# =============================================================================
+#     csv_string=''
+#     try: 
+#         data=pd.read_csv(flag_storage)
+#         type(flag_storage)
+#         csv_string = data.to_csv(index=False, encoding='utf-8')
+#         csv_string = "data:text/csv;charset=utf-8," + urllib.parse.quote(csv_string)
+#     except Exception as e:
+#         print(e)
+#     return csv_string
+# =============================================================================
 
 @app.callback(Output('graph_div', 'style'),
                 [Input('plot_hider' ,'value')])
