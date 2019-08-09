@@ -251,6 +251,7 @@ def parse_contents(contents, filename, date):
             # Assume that the user uploaded a CSV file
             df = pd.read_csv(
                 io.StringIO(decoded.decode('utf-8')))
+            print(len(df), 'rows')
         elif 'xls' in filename:
             # Assume that the user uploaded an excel file
             df = pd.read_excel(io.BytesIO(decoded))
@@ -421,9 +422,10 @@ def update_flags(n_clicks, identifier_selector,
         dff=pd.read_csv(flag_storage)
     #otherwise load global dataframe
     else:
-        dff=pd.DataFrame(df)
+        dff=df
         print('flag_storage empty')
     #if click_data is provided
+    print(len(df), 'rows')
     if click_data_storage!=None:
         
         print('clickdata: ',click_data_storage)
@@ -463,6 +465,7 @@ def update_flags(n_clicks, identifier_selector,
         print('flags', flags)
     #convert the dataframe to a dictionary for storage
     #flag_storage=dff.to_dict() 
+    print(len(dff), 'rows')
     dir_path = os.path.dirname(os.path.realpath(__file__))
     flag_storage=os.path.join(dir_path, 'temp.csv')
     dff.to_csv(flag_storage)

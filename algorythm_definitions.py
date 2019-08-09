@@ -37,7 +37,7 @@ def calc_dist(dat=[], classifier_column='Classifier', identifier_column='unique_
         #last number wil always be nan, so drop it
         stepsize=stepsize.dropna()
         #summing up stepsize to get cumulative distance
-        cumulative_distance=sum(stepsize)
+        cumulative_distance=sum(stepsize)/len(single_track)
         #calculating the distance between start and end point
         net_distance=np.sqrt((single_track[X_column].iloc[-1]-
                                 single_track[Y_column].iloc[0])**2)
