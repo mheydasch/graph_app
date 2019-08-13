@@ -43,7 +43,9 @@ def RadioItems():
     options=[
         {'label': 'lineplot', 'value': 'lineplot'},
          {'label':'migration_distance', 'value': 'migration_distance'},
-         {'label':'time_series', 'value':'time_series'}],
+         {'label':'time_series', 'value':'time_series'},
+         {'label':'corel plot', 'value': 'corel_plot'},
+         {'label':'flag_count', 'value':'flag_count'}],
     value='lineplot',
     id='graph_selector')
 def graph_reuse():

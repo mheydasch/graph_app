@@ -12,7 +12,7 @@ Holds the graph definitions for the app.
 #import plotly.chart_studio as py
 import chart_studio.plotly
 import plotly.graph_objects as go
-
+import numpy as np
 import pandas as pd
 from plotly.subplots import make_subplots
 import os
@@ -113,11 +113,11 @@ def migration_distance(dat=[], classifier_column='', identifier_column='',
     distances=distances[distances['cumulative_distance']>distance_filter]
     print('...done calculating')
     classes=list(distances['Classifier'].astype('str').unique())
-    fig=make_subplots(rows=2, cols=1, subplot_titles=['Speed','Persistence'])
+    fig=make_subplots(rows=2, cols=1, subplot_titles=['Speed','Persistence', 'Correlation'])
 
     for xpos, i in enumerate(classes):
         fig.append_trace(trace=go.Box(
-        y=distances.loc[distances['Classifier']==i]['cumulative_distance'],
+        y=distances.loc[distances['Classifier']==i]['Speed'],
         hovertext=distances.loc[distances['Classifier']==i][unique_time_selector],
         customdata=[distances.loc[distances['Classifier']==i][unique_time_selector]],
         name=i,
@@ -136,6 +136,16 @@ def migration_distance(dat=[], classifier_column='', identifier_column='',
         boxpoints='all',
         notched=True), 
         row=2, col=1)
+        
+# =============================================================================
+#     for xpos, i in enumerate(classes):
+#         fig.append_trace(trace=go.Scatter(
+#                 y=distances.loc[distances['Classifier']==i]['persistence'],
+#                 x=distances.loc[distances['Classifier']==i]['Speed'],
+#                 customdata=[distances.loc[distances['Classifier']==i][unique_time_selector]],
+#                 name=i,), 
+#                 row=2, col=1)
+# =============================================================================
     fig.update_layout(margin={'l': 40, 'b': 5, 't': 30, 'r': 200},
             height=750, width=750)
 
@@ -215,6 +225,113 @@ def time_series(dat=[], classifier_column='', identifier_column='',
     print('...done')
     return fig
 
+#%%
+
+def corel_plot(dat=[], classifier_column='', identifier_column='', 
+                timepoint_column='', data_column='', distance_filter='', 
+                unique_time_selector='', testmode=False):
+    if testmode==True:
+        dat=dat[500:10000]
+    print('creating migration boxplots')
+    print('calculating distances...')
+    #calculating the distances and persistence of migration
+    distances=AD.calc_dist(dat=dat, classifier_column=classifier_column, 
+                           identifier_column=identifier_column, timepoint_column=timepoint_column,
+                           data_column=data_column, unique_time_selector=unique_time_selector)
+    #filtering the distances by a minimum cumulative distance
+    distances=distances[distances['cumulative_distance']>distance_filter]
+    print('...done calculating')
+    classes=list(distances['Classifier'].astype('str').unique())
+    print('looping through cells...')
+    #getting the number of rows for suplots based on the amount of classes
+    row_n=len(classes)
+
+    rowlist=np.arange(1, row_n+1, 1)
+
+        #defining subplot layout
+    fig=make_subplots(rows=row_n, cols=1, subplot_titles=classes)
+    r_i=0
+    #getting max axis values
+    max_x=distances['Speed'].max()
+    min_x=distances['Speed'].min()
+    max_y=1
+    min_y=0
+    #looping through the clases
+    for i in classes:
+        #subsetting the data by the class
+        dat_class=distances.loc[distances['Classifier']==i]
+        #getting only the cells from that class
+        cells=list(dat_class['unique_id'].unique())
+        print('...of class ', i, '...')
+        if testmode==True:        
+            cells=cells[50:100]
+        #append the current classes name to the titles of the plot
+
+
+    #looping through the cells
+        for c in cells:               
+            #appending x, y data based on current cell to the list of traces
+            fig.append_trace(trace=go.Scatter(
+            #getting x values
+            x=dat_class.loc[dat_class[identifier_column]==c]['Speed'],
+            #getting y values
+            y=dat_class.loc[dat_class[identifier_column]==c]['persistence'],
+            #getting unique ID
+            hovertext=dat_class.loc[dat_class['unique_time']==c],
+            customdata=[dat_class.loc[dat_class['unique_time']==c]],
+            name=c,
+            ),
+            row=int(rowlist[math.floor(r_i)]) , col=1)
+
+
+
+            
+        #adding 1 to the row indicator, so that every class will be 
+        #plottet in a new row
+        fig.update_yaxes(range=[min_y*1.05, max_y*1.05], row=int(rowlist[math.floor(r_i)]), col=1)
+        fig.update_xaxes(range=[min_x*1.05, max_x*1.05], row=int(rowlist[math.floor(r_i)]), col=1)
+        r_i+=1
+
+    fig.update_layout(margin={'l': 40, 'b': 5, 't': 30, 'r': 40},
+            height=row_n*375, width=750)
+    fig.update_layout({'clickmode':'event+select'})
+    
+def flag_count(dat=[], classifier_column='', identifier_column='', 
+                timepoint_column='', data_column='', distance_filter='', 
+                unique_time_selector='', testmode=False):
+    
+    
+    
+    classes=list(dat[classifier_column].astype('str').unique())
+    items=list(dat[data_column[0]].unique())
+    row_n=len(items)
+    rowlist=np.arange(1, row_n+1, 1)
+
+    counts={}
+    for c in classes:
+        counts.update({c:{}})
+        for i in items:
+            i_count=len(dat[(dat[classifier_column]==c) & (dat[data_column[0]]==i)
+            ].groupby(identifier_column)[data_column[0]].count())
+            counts[c].update({i:i_count})
+    plot_data=pd.DataFrame.from_dict(counts)
+    r_i=0
+    fig=make_subplots(rows=row_n, cols=1, subplot_titles=list(plot_data.index))
+    for i in plot_data.index:
+        fig.append_trace(go.Bar(x=list(plot_data.columns), 
+                                y=list(plot_data.loc[i])),
+                                row=int(rowlist[r_i]), col=1,
+                                
+                         )
+        fig.update_yaxes(range=[plot_data.loc[i].min(), plot_data.loc[i].max()*1.2], 
+                                row=int(rowlist[r_i]), col=1)
+        r_i+=1
+    fig.update_layout(margin={'l': 40, 'b': 5, 't': 30, 'r': 40},
+            height=row_n*375, width=750)
+    #fig = go.Figure([go.Bar(x=plot_data.columns, y=plot_data.index)])
+    return fig
+
+
 #%% plots displaying other things
 def image_graph(img, x_C=1024, y_C=1024, image_info=[0, 0, 0], ID=''):
     '''
@@ -291,4 +408,5 @@ def image_graph(img, x_C=1024, y_C=1024, image_info=[0, 0, 0], ID=''):
     
     #print('image being displayed')
     return fig
+
 #/Volumes/imaging.data/Max/REF52/beta_pix/pix_10/cp.out1/output/    

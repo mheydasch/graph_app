@@ -213,7 +213,7 @@ app.layout = html.Div([
 
 
 
-     #hidden divs for storing data
+    #hidden divs for storing data
     #holds the dataframe after filtering by track length
     #dcc.Store(id='shared_data', storage_type='local'),
     #holds the unfiltered dataframe with user added flags
@@ -419,7 +419,7 @@ def update_flags(n_clicks, identifier_selector,
     pattern=re.compile(pattern_storage[0])    
     #if flag storage not empty load it
     if flag_storage != None: 
-        dff=pd.read_csv(flag_storage)
+        dff=pd.read_csv(flag_storage, index_col='index')
     #otherwise load global dataframe
     else:
         dff=df
@@ -468,7 +468,7 @@ def update_flags(n_clicks, identifier_selector,
     print(len(dff), 'rows')
     dir_path = os.path.dirname(os.path.realpath(__file__))
     flag_storage=os.path.join(dir_path, 'temp.csv')
-    dff.to_csv(flag_storage)
+    dff.to_csv(flag_storage, index_label='index')
     
     print('flag_filter', flag_filter)    
     return flag_storage, flag_filter
@@ -501,6 +501,9 @@ def plot_graph(n_clicks, graph_selector, classifier_choice,
                identifier_selector, timepoint_selector, data_selector, distance_filter, 
                graph_storage, graph_reuse, flag_filter, unique_time_selector, flag_storage,
                track_length_selector, exclude_seen, pattern_storage):
+    
+    
+    
     #if the graph storage is empty an empty dictionary will be created
     if graph_storage==None or graph_reuse=='no':
         graph_storage={}
@@ -509,9 +512,24 @@ def plot_graph(n_clicks, graph_selector, classifier_choice,
     
     #try to read flag sotrage.
     if flag_storage != None:
-        dff=pd.read_csv(flag_storage)
+        dff=pd.read_csv(flag_storage, index_col='index')
     else:
         dff=pd.DataFrame(df)
+    #force appropriate datatypes
+# =============================================================================
+#     dff[classifier_choice]=dff[classifier_choice].astype(str)
+#     dff[identifier_selector]=dff[identifier_selector].astype(str)
+#     dff[timepoint_selector]=dff[timepoint_selector].astype(int)
+#     for i in data_selector:
+#         dff[i]=dff[i].astype(float)
+#     dff[unique_time_selector]=dff[unique_time_selector].astype(str)
+# =============================================================================
+    
+    
+    
+    
+    
+    
     track_lengths=pd.DataFrame(dff.groupby(identifier_selector)[timepoint_selector].count())
     #filtering the track lengths by only selecting those with a track length higher,
     #then the one chosen in the slider
@@ -548,11 +566,13 @@ def plot_graph(n_clicks, graph_selector, classifier_choice,
     #oherwise the graph will be picked from the graph options dictionary, the figure will be created,
     #the graph_storage dictionary will be updated and the figure and updated dictionary will be returned
     else:
-        graph_options={'lineplot':GD.lineplot, 'migration_distance':GD.migration_distance, 'time_series':GD.time_series}
+        graph_options={'lineplot':GD.lineplot, 'migration_distance':GD.migration_distance, 'time_series':GD.time_series,
+                       'corel_plot': GD.corel_plot, 'flag_count':GD.flag_count}
         fig=graph_options[graph_selector](dat=dff, classifier_column=classifier_choice, 
                             identifier_column=identifier_selector,
                             timepoint_column=timepoint_selector, data_column=data_selector, 
-                            distance_filter=distance_filter, unique_time_selector=unique_time_selector, testmode=False)
+                            distance_filter=distance_filter,
+                            unique_time_selector=unique_time_selector, testmode=False)
         graph_storage.update({graph_selector:fig})
         return fig, graph_storage
 
@@ -578,7 +598,7 @@ def update_image_overlay(hoverData, image_dict,
         print('No images have been uploaded')
     #read data from flag_storage if exists    
     if flag_storage != None:
-        data=pd.read_csv(flag_storage)
+        data=pd.read_csv(flag_storage, index_col='index')
     #else from shared data
     else:
         data=pd.DataFrame(df)
@@ -691,6 +711,8 @@ def update_image_overlay(hoverData, image_dict,
             if int(row[coordinate_selector[0]])!=x_coord:
                 if 'flags' in data.columns:
                     flag=row['flags']
+                else: 
+                    flag='None'
                 alt_img.update({row[unique_time_selector]:[int(row[coordinate_selector[0]]), int(row[coordinate_selector[1]]), flag]})
 
         
@@ -784,8 +806,8 @@ def update_image_graph(value, image_dict, brightness):
                              
 def update_download_link(n_clicks, flag_storage, save_area):
     print(save_area)
-    data=pd.read_csv(flag_storage)
-    data.to_csv(save_area)
+    data=pd.read_csv(flag_storage, index_col='index')
+    data.to_csv(save_area, index_label='index')
     print('file saved under', save_area)
     return 'Download datatable'
     
