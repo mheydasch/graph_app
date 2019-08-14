@@ -1,4 +1,7 @@
 # graph_app
+This tool has been developed on MacOs. It might not work on other operating
+systems due to differences in file path seperators. If such an error 
+occurs feel free to report it.
 
 This tool is intended to be used for exploration of microscopy data.
 It provides you with the ability to load data, make graphs from it and display the images the data relates to
