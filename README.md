@@ -60,6 +60,7 @@ Progress will be printed to the terminal, as well as the URL the app will be lau
 Running on http://127.0.0.1:8050/
 
 Copy this URL to your browser and hit enter. 
+I recommend using Google Chrome, as Firefox sometimes froze during usage.
 
 
 
