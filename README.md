@@ -174,3 +174,20 @@ It needs to be run from a python editor, such as Spyder, or PyCharm.
 First the class Experiment_data needs to be initiated with the path to your data, 
 then the normalize_tracks() function needs to be called and then the Experiment_data.tracks object
 needs to be saved as a csv.
+
+
+If you want to make changes to the script it is reccomended to change debug in 
+if __name__ == '__main__':
+    app.run_server(debug=False)
+
+to True. In addition there is a testmode flag for the graph plotting in the function plot_graph(). 
+If you are having large datasets you should set this to True for faster testing.
+What this flag does is defined in the plotting functions. Depending on the size of your data 
+you might want to change the subsetting of data. 
+After starting the app you can click on the Callback Graph, next to the Errors to see a rough overview of the apps logic.
+The app is split in four main files.
+app_launcher.py contains the html layout and all the callbacks of the app.
+
+menu_definitions.py contains the definitions for most menus, buttons and other input options.
+
+graph_defintions.py contains 

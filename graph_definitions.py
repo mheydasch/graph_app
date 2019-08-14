@@ -230,7 +230,7 @@ def corel_plot(dat=[], classifier_column='', identifier_column='',
                 timepoint_column='', data_column='', distance_filter='', 
                 unique_time_selector='', testmode=False):
     if testmode==True:
-        dat=dat[500:10000]
+        dat=dat[0:100]
     print('creating correlation plot')
     print('calculating distances...')
     #calculating the distances and persistence of migration
