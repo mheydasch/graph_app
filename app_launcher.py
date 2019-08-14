@@ -357,9 +357,11 @@ def update_images(n_clicks, folder):
                 #image_dict.update({img_key:encoded})     
                 image_dict.update({img_key:img_path})
                 #i_dirs.append(os.path.join(root, img)) 
-                
-    print(AD.take(5, image_dict.items()))
-    print('images uploaded')
+    if bool(image_dict):            
+        print(AD.take(5, image_dict.items()))
+        print('images uploaded')
+    else:
+        print('Error: No images have been found')
     return image_dict
 #%% ID pattern recognition
 @app.callback([Output('pattern_storage', 'data'),],

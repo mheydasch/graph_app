@@ -143,7 +143,9 @@ Change to the "Graph" tab.
 
 If you want images to be displayed while hovering over the points on the graph you need to give the full path to the folder
 that holds your images in the respective text field and press the "upload_images" button.
-This might take some time, progress again will be printed to the terminal.
+This might take some time, progress again will be printed to the terminal. A subset of the created dictionaries,
+relating keys to filepaths to the images will be printed to the terminal. If no such dictionary is printed, this means
+no images have been found. In this case you should check the path for spelling errors.
 The files can be hidden in subfolders, the given folder must contain all subfolders that contain your files.
 Currently the app will upload ALL png files that are directly in subfolders named 'overlays'. These folders therefore
 must not contain any other png files, but the images you want to be displayed.
