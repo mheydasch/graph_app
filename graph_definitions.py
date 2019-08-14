@@ -18,7 +18,6 @@ from plotly.subplots import make_subplots
 import os
 import sys
 import math
-import numpy as np
 sys.path.append(os.path.realpath(__file__))
 import algorythm_definitions as AD
 
@@ -232,7 +231,7 @@ def corel_plot(dat=[], classifier_column='', identifier_column='',
                 unique_time_selector='', testmode=False):
     if testmode==True:
         dat=dat[500:10000]
-    print('creating migration boxplots')
+    print('creating correlation plot')
     print('calculating distances...')
     #calculating the distances and persistence of migration
     distances=AD.calc_dist(dat=dat, classifier_column=classifier_column, 
@@ -262,10 +261,30 @@ def corel_plot(dat=[], classifier_column='', identifier_column='',
         dat_class=distances.loc[distances['Classifier']==i]
         #getting only the cells from that class
         cells=list(dat_class['unique_id'].unique())
-        print('...of class ', i, '...')
         if testmode==True:        
             cells=cells[50:100]
-        #append the current classes name to the titles of the plot
+        print('...of class ', i, '...')
+        
+        #get the regression line
+        x_reg=distances[distances['Classifier']==i]['Speed']
+        y_reg=distances[distances['Classifier']==i]['persistence']
+        n=np.size(x_reg)
+        mean_x, mean_y=np.mean(x_reg), np.mean(y_reg)
+        
+        SS_xy= np.sum(y_reg*x_reg - n*mean_y*mean_x)
+        SS_xx=np.sum(x_reg*x_reg - n*mean_x*mean_x)
+        
+        b_1=SS_xy/SS_xx
+        b_0=mean_y-b_1*mean_x
+        y_pred=b_0+b_1*x_reg
+        #print(type(x_reg))
+        #print(y_pred[0:20])
+        #print(type(y_pred))
+        fig.append_trace(trace=go.Scatter(
+                x=x_reg,
+                y=y_pred,
+                ), row=int(rowlist[math.floor(r_i)]) , col=1)
+
 
 
     #looping through the cells
@@ -277,24 +296,24 @@ def corel_plot(dat=[], classifier_column='', identifier_column='',
             #getting y values
             y=dat_class.loc[dat_class[identifier_column]==c]['persistence'],
             #getting unique ID
-            hovertext=dat_class.loc[dat_class['unique_time']==c],
-            customdata=[dat_class.loc[dat_class['unique_time']==c]],
+            hovertext=dat_class.loc[dat_class['unique_id']==c][unique_time_selector],
+            customdata=dat_class.loc[dat_class['unique_id']==c][unique_time_selector],
             name=c,
             ),
             row=int(rowlist[math.floor(r_i)]) , col=1)
-
-
-
-            
+            #print('... of cell' , c, '...')
+        #print('...done with class', i, '...')
+        
         #adding 1 to the row indicator, so that every class will be 
         #plottet in a new row
-        fig.update_yaxes(range=[min_y*1.05, max_y*1.05], row=int(rowlist[math.floor(r_i)]), col=1)
-        fig.update_xaxes(range=[min_x*1.05, max_x*1.05], row=int(rowlist[math.floor(r_i)]), col=1)
+        fig.update_yaxes(title='Persistence', range=[min_y*1.05, max_y*1.05], row=int(rowlist[math.floor(r_i)]), col=1)
+        fig.update_xaxes(title= 'Speed', range=[min_x*1.05, max_x*1.05], row=int(rowlist[math.floor(r_i)]), col=1)
         r_i+=1
 
     fig.update_layout(margin={'l': 40, 'b': 5, 't': 30, 'r': 40},
             height=row_n*375, width=750)
     fig.update_layout({'clickmode':'event+select'})
+    return fig
     
 def flag_count(dat=[], classifier_column='', identifier_column='', 
                 timepoint_column='', data_column='', distance_filter='', 
@@ -323,7 +342,7 @@ def flag_count(dat=[], classifier_column='', identifier_column='',
                                 row=int(rowlist[r_i]), col=1,
                                 
                          )
-        fig.update_yaxes(range=[plot_data.loc[i].min(), plot_data.loc[i].max()*1.2], 
+        fig.update_yaxes(range=[0, plot_data.loc[i].max()*1.2], 
                                 row=int(rowlist[r_i]), col=1)
         r_i+=1
     fig.update_layout(margin={'l': 40, 'b': 5, 't': 30, 'r': 40},
@@ -356,7 +375,7 @@ def image_graph(img, x_C=1024, y_C=1024, image_info=[0, 0, 0], ID=''):
             marker_opacity=0
         )
             )
-
+    #displaying marker for the selected cell
     fig.add_trace(go.Scatter(
         hovertext=ID,
         customdata=[ID],
@@ -392,7 +411,7 @@ def image_graph(img, x_C=1024, y_C=1024, image_info=[0, 0, 0], ID=''):
                                     x=0,
                                     y=y_C,
                                     #using input image sizes as the
-                                    #axes legnths for the graph
+                                    #axes lengths for the graph
                                     sizex=x_C,
                                     sizey=y_C,
                                     sizing='stretch',
