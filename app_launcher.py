@@ -750,10 +750,10 @@ def update_image_overlay(hoverData, image_dict,
         #get the time, something like _T1
         #print('i: ', i)
         Time_ID= i.replace(Site_ID, '')
-        print('Time_ID:', Time_ID)
+        #print('Time_ID:', Time_ID)
         #gets only the numeric value of the timepoint
         Time= re.search(timenumber_pattern, Time_ID).group()
-        print('Time:', Time)
+        #print('Time:', Time)
         timepoint_data=Site_data[Site_data[timepoint_selector]==int(Time)]
         alt_img={}
         for index, row in timepoint_data.iterrows():
