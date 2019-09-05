@@ -36,7 +36,7 @@ by the regular expression. **Every part** of the ID in your csv file needs to be
 The above regular expression is the standard one, but can be changed by the user
 
 
-##### unctionality
+#### Functionality
 You can choose to display different types of graphs:
 
 Lineplots, where each line represents the migration track of an individual cell
