@@ -222,4 +222,4 @@ app_launcher.py contains the html layout and all the callbacks of the app.
 
 menu_definitions.py contains the definitions for most menus, buttons and other input options.
 
-graph_defintions.py contains 
+graph_defintions.py contains all the plotting functions
