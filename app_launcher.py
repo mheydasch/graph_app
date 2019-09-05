@@ -357,7 +357,7 @@ def update_images(n_clicks, folder, pattern_storage):
             #finds the csv files in the folder and adds them to a list
             image_files=[x for x in files if re.search(png_find, x)!=0]
             for img in image_files:
-                print(img)
+                #print(img)
                 #print(type(img))
                 #join image and full path
                 img_path=os.path.join(root, img)
@@ -545,10 +545,6 @@ def plot_graph(n_clicks, graph_selector, classifier_choice,
 # =============================================================================
     
     
-    
-    
-    
-    
     track_lengths=pd.DataFrame(dff.groupby(identifier_selector)[timepoint_selector].count())
     #filtering the track lengths by only selecting those with a track length higher,
     #then the one chosen in the slider
@@ -630,6 +626,7 @@ def update_image_overlay(hoverData, image_dict,
     #getting hovertext from hoverdata and removing discrepancies between hover text and filenames
     #(stripping of track_ID)
     ID_or=hoverData['points'][0]['hovertext']
+    print('ID_or:', ID_or)
     try:
         #getting the different components of the ID. Such as:
         #'WB2' '_S0520' '_E3' '_T40'         
@@ -637,15 +634,15 @@ def update_image_overlay(hoverData, image_dict,
                  'Site_ID', 'TrackID', 'Timepoint')
 
         #exclusion criterium if timepoint is already there
-        exclusion=track_ID+Timepoint
+        exclusion=track_ID+'_'+Timepoint
         #print(Timepoint, track_ID, Wellname, Sitename)
-        
-        #print('track_ID: ', track_ID)
+        print('exclusion:', exclusion)
+        print('track_ID: ', track_ID)
         #getting the ID to the images by stripping off extensions
         #something like 'WB2_S1324
         ID=ID_or.replace(exclusion,'')
-        #print('ID_or: ', ID_or)
-        #print('ID: ', ID)
+        print('ID_or: ', ID_or)
+        print('ID: ', ID)
     except AttributeError:       
         print('Error: unrecognized pattern')
 # =============================================================================
@@ -696,12 +693,16 @@ def update_image_overlay(hoverData, image_dict,
     print('Site_ID', Site_ID)
     #gets part of the dataframe that is from the current image
     Site_data=data[data[identifier_selector].str.contains(Site_ID)]
+    #gets the part of the timepoint which is not a number
+    timeindicator_pattern=re.compile('.*?(?=[0-9])')
+    timeindicator=re.search(timeindicator_pattern, Timepoint).group()
     
     #getting all the images for the respective timepoints
     for i in imagelist:
+        #print(i)
         #adding the unique ID of the cell back into the key of the image
         #to get X, Y coordinates. Something like 'WB2_S1324_E4_T1'        
-        tracking_ID=i.replace(re.search('_T', i).group(), track_ID+'_T')
+        tracking_ID=i.replace(re.search(timeindicator, i).group(), track_ID+'_'+timeindicator)
         #print('tracking_ID: ',tracking_ID)
         img=image_dict[i]
         try:
@@ -737,7 +738,7 @@ def update_image_overlay(hoverData, image_dict,
         
         loaded_dict.update({img:[x_coord, y_coord, {'alt_cells': alt_img}, tracking_ID, flag]})
  
-    #print(AD.take(5, loaded_dict.items())) 
+    print(AD.take(3, loaded_dict.items())) 
     print('encoding complete')
     return loaded_dict
 
@@ -856,4 +857,4 @@ def hide_graphs(value):
 
 #%%
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=False)
