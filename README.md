@@ -3,10 +3,10 @@ This tool is intended to be used for exploration of microscopy data.
 It provides you with the ability to load data, make graphs from it and display the images the data relates to
 when clicking on individual points on the graphs.
 
-####compatibility
+### Compatibility
 This tool has been developed on MacOs and been tested on Windows10
 
-####Getting started:
+### Getting started:
 To start you have to have a csv file of your data in long format and one or multiple folders called overlays
  with images related to that data
 Your dataframe needs to have the following columns:
@@ -36,7 +36,7 @@ by the regular expression. **Every part** of the ID in your csv file needs to be
 The above regular expression is the standard one, but can be changed by the user
 
 
-##### Functionality
+##### unctionality
 You can choose to display different types of graphs:
 
 Lineplots, where each line represents the migration track of an individual cell
