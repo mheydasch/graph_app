@@ -242,7 +242,7 @@ def brightness_slider():
             id='brightness_slider',
             min=0,
             max=15,
-            step=0.1,
+            step=None,
             value=1,
             marks={0:'0',                     
                   0.5:'0.5',

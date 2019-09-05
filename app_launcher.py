@@ -11,7 +11,7 @@ import io
 from PIL import Image
 from PIL import ImageEnhance
 import urllib.parse
-from flask_caching import Cache
+#from flask_caching import Cache
 import uuid
 
 import dash
@@ -53,11 +53,13 @@ other functions for calculations on data are defined in algorythm_definitions.py
 
 
 #%% caching
-cache = Cache(app.server, config={
-    'CACHE_TYPE': 'filesystem',
-    'CACHE_DIR': 'cache-directory',
-    'CACHE_THRESHOLD': 5  # should be equal to maximum number of active users
-})
+# =============================================================================
+# cache = Cache(app.server, config={
+#     'CACHE_TYPE': 'filesystem',
+#     'CACHE_DIR': 'cache-directory',
+#     'CACHE_THRESHOLD': 5  # should be equal to maximum number of active users
+# })
+# =============================================================================
 
 
 
@@ -159,12 +161,13 @@ app.layout = html.Div([
                      children= [html.Div([
                                      #graph for showing data
                                      html.Div([html.P('Graph Display: '),
-                                               html.Div([dcc.Graph(id='migration_data')],
+                                               html.Div([dcc.Graph(id='migration_data', )],
                                                         id='graph_div'),
                                                ], 
                                           className= 'six columns'),
                                                #graph for showing the image
-                                     html.Div([dcc.Graph(id='image-overlay'),
+                                     html.Div([dcc.Graph(id='image-overlay',
+                                                         ),
                                                #slider for selection of image
                                                MD.image_slider(),
                                                
@@ -327,15 +330,23 @@ def update_dropdown(contents):
 #%% update after image folder got parsed 
 @app.callback(Output('image_list', 'data'),
               [Input('Folder_submit', 'n_clicks')],
-              [State('Image_folder', 'value'),])
-def update_images(n_clicks, folder):
+              [State('Image_folder', 'value'),
+              State('pattern_storage', 'data')])
+def update_images(n_clicks, folder, pattern_storage):
     find_dir='overlays'
+    print('pattern storage: ', pattern_storage)
+    #gets the pattern of the trackid from the input pattern
+    trackid_pattern=re.compile(r'\(\?P\<TrackID\>.*?(?=\()')
+    #removes the trackid pattern from the pattern to find images
+    pattern=pattern_storage[0].replace(re.search(trackid_pattern, pattern_storage[0]).group(), '') 
     #finding only png files
     png_find=re.compile('.png')
     image_dict={}
     print(folder)
     print('uploading...')
-    key_pattern=re.compile('W[A-Z][0-9]_S[0-9]+_T[0-9]+')
+    key_pattern=re.compile(pattern)
+    print(key_pattern)
+    #key_pattern=re.compile('W[A-Z][0-9]_S[0-9]+_T[0-9]+')
     for root, dirs, files in os.walk(folder):
         #print(dirs)
     #looks in each folder from given path
@@ -344,17 +355,23 @@ def update_images(n_clicks, folder):
         if find_dir in root and len([x for x in files if re.search(png_find, x)])!=0:
             #print(find_dir)
             #finds the csv files in the folder and adds them to a list
-            image_files=[x for x in files]
+            image_files=[x for x in files if re.search(png_find, x)!=0]
             for img in image_files:
-                #print(img)
+                print(img)
                 #print(type(img))
                 #join image and full path
                 img_path=os.path.join(root, img)
                 #open and encode the image with base64 encoding
                 #encoded=base64.b64encode(open(img_path, 'rb').read())
                 #update the dictionary
-                img_key=re.search(key_pattern, img).group()
-                #image_dict.update({img_key:encoded})     
+                #gets the Site_ID and timepoint from the images
+                try:
+                    Site_ID, Timepoint =re.search(key_pattern, img).group('Site_ID', 'Timepoint')
+                except AttributeError:
+                    break 
+                #adds them together as the image key
+                img_key=Site_ID+'_'+Timepoint
+                #img_key=re.search(key_pattern, img).group()
                 image_dict.update({img_key:img_path})
                 #i_dirs.append(os.path.join(root, img)) 
     if bool(image_dict):            
@@ -371,7 +388,7 @@ def update_images(n_clicks, folder):
 #gets triggered when the pattern submit button is pressed and simply
 #stores the submitted regex pattern
 def update_ID_pattern(n_clicks, value, ):
-    #print(value, 'submitted')
+    print(value, 'submitted')
     
     return [str(value)], 
     
@@ -776,7 +793,7 @@ def update_image_graph(value, image_dict, brightness):
     Based on the value of the image slider it selects an image from
     the dictionary and calls the graph with that image, including
     the X,Y coordinates of all cells in that image 
-    It also gets a value from 0-2 from the brightness slider, and adjusts the
+    It also gets a value from 0-15 from the brightness slider, and adjusts the
     brightness of the image accordingly.
     '''
     
@@ -839,4 +856,4 @@ def hide_graphs(value):
 
 #%%
 if __name__ == '__main__':
-    app.run_server(debug=False)
+    app.run_server(debug=True)

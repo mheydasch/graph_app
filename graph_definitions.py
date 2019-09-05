@@ -101,7 +101,7 @@ def migration_distance(dat=[], classifier_column='', identifier_column='',
                        timepoint_column='', data_column='', distance_filter='', 
                        unique_time_selector='', testmode=False):
     if testmode==True:
-        dat=dat[500:10000]
+        dat=dat[0:50]
     print('creating migration boxplots')
     print('calculating distances...')
     #calculating the distances and persistence of migration
@@ -262,7 +262,7 @@ def corel_plot(dat=[], classifier_column='', identifier_column='',
         #getting only the cells from that class
         cells=list(dat_class['unique_id'].unique())
         if testmode==True:        
-            cells=cells[50:100]
+            cells=cells[0:50]
         print('...of class ', i, '...')
         
         #get the regression line
