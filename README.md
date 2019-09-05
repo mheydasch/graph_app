@@ -1,13 +1,42 @@
 # graph_app
-This tool has been developed on MacOs. It might not work on other operating
-systems due to differences in file path seperators. If such an error 
-occurs feel free to report it.
-
 This tool is intended to be used for exploration of microscopy data.
-
 It provides you with the ability to load data, make graphs from it and display the images the data relates to
 when clicking on individual points on the graphs.
 
+####compatibility
+This tool has been developed on MacOs and been tested on Windows10
+
+####Getting started:
+To start you have to have a csv file of your data in long format and one or multiple folders called overlays
+ with images related to that data
+Your dataframe needs to have the following columns:
+??1. Columns holding X and Y coordinates of the individual cells
+??2. Columns holding your data. Can be the same as X  and Y coordinates
+??3. A column holding the timepoints
+??4. A column holding the unique ids of individual cells including the time. 
+???These should be formatted the following: An identifier for the field of view, an Identifier for the tracking ID of the cell
+???An identifier of the time. Each of these should be preceeded by a letter indicating which ID it is, such as 
+???WC2_S0127_E1_T1. Where C2_S0127 is the field of view, 1 is the track ID and 1 is the Timepoint
+??5. A column holding the unique ids without the time.
+??6. A column which you want to use as a classifier
+
+Your images need to contain the same identifier as the one in your csv file, without the unique cell identifier.
+For example with the above mentioned unique ID: *WC2_S0127_E1_T1* the corresponding image can be named
+something like  *t1_F0127_nuclei_C2_WC2_S0127_T1.png*. Whereas the part *C2_WC2_S0127_T1.png* is required
+and the rest is optional. 
+To capture the ID of above example you would employ a regular expression such as
+*(?P<Site_ID>W[A-Z][0-9]+_S[0-9]{4})(?P<TrackID>_E[0-9]+)(?P<Timepoint>_T[0-9]+)*
+It is crucial that your identification has these three different ids:
+??**Site_ID**
+??**TrackID**
+??**Timepoint**
+Currently the order of these IDs needs to be exactly this.
+If you are having underscores separating your IDs they need to be captured
+by the regular expression. **Every part** of the ID in your csv file needs to be captured.
+The above regular expression is the standard one, but can be changed by the user
+
+
+##### Functionality
 You can choose to display different types of graphs:
 
 Lineplots, where each line represents the migration track of an individual cell

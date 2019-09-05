@@ -45,7 +45,7 @@ def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_colum
     rowlist=np.arange(1, row_n+1, 1)
 
         #defining subplot layout
-    fig=make_subplots(rows=row_n, cols=1, subplot_titles=classes)
+    fig=make_subplots(rows=row_n, cols=1, subplot_titles=[str(c) for c in classes])
     r_i=0
     #getting max axis values
     max_x=dat[X_column].max()
