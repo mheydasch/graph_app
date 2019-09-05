@@ -25,7 +25,7 @@ For example with the above mentioned unique ID: *WC2_S0127_E1_T1* the correspond
 something like  *t1_F0127_nuclei_C2_WC2_S0127_T1.png*. Whereas the part *C2_WC2_S0127_T1.png* is required
 and the rest is optional. 
 To capture the ID of above example you would employ a regular expression such as
-*(?P<Site_ID>W[A-Z][0-9]+_S[0-9]{4})(?P<TrackID>_E[0-9]+)(?P<Timepoint>_T[0-9]+)*
+*(?P<Site_ID>W[A-Z][0-9]+_S[0-9]{4})(?P\<TrackID\>_E[0-9]+)(?P\<Timepoint\>_T[0-9]+)*
 It is crucial that your identification has these three different ids:
   **Site_ID**
   **TrackID**
@@ -36,7 +36,7 @@ by the regular expression. **Every part** of the ID in your csv file needs to be
 The above regular expression is the standard one, but can be changed by the user
 
 
-#### Functionality
+### Functionality
 You can choose to display different types of graphs:
 
 Lineplots, where each line represents the migration track of an individual cell
@@ -185,7 +185,7 @@ the file app_launcher.py.
 
 If an error occurs, or you want to use new data, simply relaunch the app.
 
-
+### Help
 To help you get your data in the required format there are several files
 in the folder examples_and_helpers:
 rename.FoV.py is a pythonscript used from the terminal to rename images with standard Nikon naming to an easier to work with format.
