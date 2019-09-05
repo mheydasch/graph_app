@@ -4,7 +4,32 @@
 Created on Mon Jul  1 13:11:11 2019
 @author: max
 """
+'''
 
+Current rules for pattern:
+    The order of the pattern in the column unique_time must be Site_ID, TrackID, Timepoint
+    The three IDs must be seperated by underscores (_). These underscores must not be 
+    captured by the regular expression.
+    
+    Each pattern must be precided by a number e.g.: WB2_E3_T5
+    
+    The patterns for Site_ID and Timepoint must be the same in the images as well as in the
+    data frame
+    
+    The timepoint must be the same in the timepoint column as well as in the pattern, without
+    the preceeding letter.
+    
+    
+    
+to do:
+    currently any 'T' (timepoint indicator) will fuck the image correlation up
+    if it does exist anywhere else in the name
+    Currently does not work if any other order than Site_ID, TrackID, Timpepoint is used
+    currently does not work without x, y coordinates
+    Important:
+        images with albertos dataset are not containing all cells
+        comment adding for albertos dataset does not work
+'''
 import base64
 import datetime
 import io
@@ -370,7 +395,7 @@ def update_images(n_clicks, folder, pattern_storage):
                 except AttributeError:
                     break 
                 #adds them together as the image key
-                img_key=Site_ID+'_'+Timepoint
+                img_key=Site_ID+Timepoint
                 #img_key=re.search(key_pattern, img).group()
                 image_dict.update({img_key:img_path})
                 #i_dirs.append(os.path.join(root, img)) 
@@ -473,8 +498,10 @@ def update_flags(n_clicks, identifier_selector,
            try:
                Timepoint=re.search(pattern, ID).group('Timepoint')
                ID=ID.replace(Timepoint,'')
+               print('Timless ID: ', ID)
                dff.loc[dff[identifier_selector]==ID, 'flags']=track_comment
            except AttributeError:
+               print('No Timepoint found')  
                dff.loc[dff[identifier_selector]==ID, 'flags']=track_comment
 
         #create a list of unique flags
@@ -634,7 +661,7 @@ def update_image_overlay(hoverData, image_dict,
                  'Site_ID', 'TrackID', 'Timepoint')
 
         #exclusion criterium if timepoint is already there
-        exclusion=track_ID+'_'+Timepoint
+        exclusion=track_ID+Timepoint
         #print(Timepoint, track_ID, Wellname, Sitename)
         print('exclusion:', exclusion)
         print('track_ID: ', track_ID)
@@ -702,7 +729,7 @@ def update_image_overlay(hoverData, image_dict,
         #print(i)
         #adding the unique ID of the cell back into the key of the image
         #to get X, Y coordinates. Something like 'WB2_S1324_E4_T1'        
-        tracking_ID=i.replace(re.search(timeindicator, i).group(), track_ID+'_'+timeindicator)
+        tracking_ID=i.replace(re.search(timeindicator, i).group(), track_ID+timeindicator)
         #print('tracking_ID: ',tracking_ID)
         img=image_dict[i]
         try:
@@ -723,8 +750,10 @@ def update_image_overlay(hoverData, image_dict,
         #get the time, something like _T1
         #print('i: ', i)
         Time_ID= i.replace(Site_ID, '')
+        print('Time_ID:', Time_ID)
         #gets only the numeric value of the timepoint
         Time= re.search(timenumber_pattern, Time_ID).group()
+        print('Time:', Time)
         timepoint_data=Site_data[Site_data[timepoint_selector]==int(Time)]
         alt_img={}
         for index, row in timepoint_data.iterrows():
@@ -857,4 +886,4 @@ def hide_graphs(value):
 
 #%%
 if __name__ == '__main__':
-    app.run_server(debug=False)
+    app.run_server(debug=True)
