@@ -11,6 +11,7 @@ import pandas as pd
 #import re
 import numpy as np
 from itertools import islice
+import os
 #%%
 def take(n, iterable):
     "Return first n items of the iterable as a list"
@@ -62,3 +63,10 @@ def calc_median(distances,  classifier_column='', identifier_column='', timepoin
     low_migration=(distances[distances['cumulative_distance']<1].groupby('Well')[identifier_column].count())/\
     (distances.groupby(classifier_column)[identifier_column].count())
     return median_values, low_migration
+
+def createFolder(directory):
+    try:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+    except OSError:
+        print ('Error: Creating directory. ' + directory)

@@ -257,7 +257,8 @@ app.layout = html.Div([
     dcc.Store(id='image_dict', storage_type='memory'),
     #stores raw click data to be retrieved by update_flags
     dcc.Store(id='click_data_storage', storage_type='memory'),
-    #dcc.Store(id='test_storage', storage_type='session'),
+    #empty storage for settings sham output
+    dcc.Store(id='test_storage', storage_type='memory'),
     #dcc.Store(id='df_storage', storage_type='session'),
 
 ])
@@ -339,7 +340,7 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
               [Input('output-data-upload', 'children')])
 
 def update_dropdown(contents):
-    print('updating menus')
+    print('updating menus...')
     #df=pd.read_json(contents, orient='split')
     columns=df.columns
     col_labels=[{'label' :k, 'value' :k} for k in columns]
@@ -348,7 +349,7 @@ def update_dropdown(contents):
     data_cols=col_labels
     unique_time_columns=col_labels
     coordinates=col_labels
-    #print(col_labels)
+    print('... menus updated')
 
     return col_labels, identifier_cols, timepoint_cols, data_cols, unique_time_columns, coordinates
 
@@ -513,8 +514,10 @@ def update_flags(n_clicks, identifier_selector,
     #flag_storage=dff.to_dict() 
     print(len(dff), 'rows')
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    flag_storage=os.path.join(dir_path, 'temp.csv')
+    AD.createFolder(os.path.join(dir_path, 'Cache'))
+    flag_storage=os.path.join(dir_path, 'Cache', 'temp.csv')
     dff.to_csv(flag_storage, index_label='index')
+
     
     print('flag_filter', flag_filter)    
     return flag_storage, flag_filter
@@ -634,9 +637,12 @@ def update_image_overlay(hoverData, image_dict,
                          coordinate_selector, pattern_storage, flag_storage, track_length_selector):
 
     print('pattern storage: ', pattern_storage)
-    pattern=re.compile(pattern_storage[0])
+    try:
+        pattern=re.compile(pattern_storage[0])
+    except TypeError:
+        print('Error: no pattern has been submitted')
     #Error message if no images have been uploaded
-    if len(image_dict)==0:
+    if type(image_dict)!= None or len(image_dict)==0:
         print('No images have been uploaded')
     #read data from flag_storage if exists    
     if flag_storage != None:
@@ -880,8 +886,76 @@ def hide_graphs(value):
     if value=='No':
         return {'display':'block'}
     
+#%% load previous settings
+@app.callback([Output('graph_selector', 'value'),
+               Output('classifier_choice', 'value'),
+               Output('identifier_selector', 'value'),
+               Output('timepoint_selector', 'value'),
+               Output('data_selector', 'value'),
+               Output('distance_filter', 'value'),
+               Output('graph_reuse', 'value'),
+               Output('flag_filter', 'value'),
+               Output('unique_time_selector', 'value'),
+               Output('track_length_selector', 'value'),
+               Output('exclude_seen', 'value'),
+               Output('ID_pattern', 'value'),
+               Output('save_path', 'value'),
+               Output('Image_folder', 'value'),
+               Output('plot_hider' ,'value')],
+               [Input('output-data-upload', 'children')])
 
+def load_settings(output_data_upload):
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    settings=pd.read_csv(os.path.join(dir_path,'Cache', 'settings.csv')).loc[0]
+    settinglist=[]
+    for enum, column in enumerate(settings):
+        if enum >0:
+            settinglist.append(column)
+    print(settinglist)
+    return settinglist
 
+#%% safe current settings
+@app.callback(Output('test_storage', 'children'),
+              [Input('graph_selector', 'value'),
+               Input('classifier_choice', 'value'),
+               Input('identifier_selector', 'value'),
+               Input('timepoint_selector', 'value'),
+               Input('data_selector', 'value'),
+               Input('distance_filter', 'value'),
+               Input('graph_reuse', 'value'),
+               Input('flag_filter', 'value'),
+               Input('unique_time_selector', 'value'),
+               Input('track_length_selector', 'value'),
+               Input('exclude_seen', 'value'),
+               Input('ID_pattern', 'value'),
+               Input('save_path', 'value'),
+               Input('Image_folder', 'value'),
+               Input('plot_hider' ,'value')],
+               [State('output-data-upload', 'children')])
+def safe_settings(graph_selector, classifier_choice, identifier_selector,
+                  timepoint_selector, data_selector, distance_filter,
+                  graph_reuse, flag_filter, unique_time_selector,
+                  track_length_selector, exclude_seen,
+                  ID_pattern, save_path,
+                  Image_folder, plot_hider, output_data_upload):
+    
+    if output_data_upload!=None:
+        settings=pd.DataFrame(data={'graph_selector': graph_selector, 'classifier_choice': classifier_choice,
+                           'identifier_selector':identifier_selector, 'timepoint_selector': timepoint_selector,
+                           'data_selector':data_selector, 'distance_filter': distance_filter,
+                            'graph_reuse':graph_reuse,
+                           'flag_filter':flag_filter,'unique_time_selector':unique_time_selector,
+                           'track_length_selector':track_length_selector, 'exclude_seen':exclude_seen,
+                           'ID_pattern': ID_pattern,
+                           'save_path': save_path,
+                           'Image_folder': Image_folder, 
+                           'plot_hider':plot_hider}, index=[1,2])
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        AD.createFolder(os.path.join(dir_path, 'Cache'))
+        setting_storage=os.path.join(dir_path, 'Cache', 'settings.csv')
+        settings.to_csv(setting_storage, index_label='index')
+        #print('settings have been saved to {}'.format(setting_storage))
+        return 'nothing'
 
 
 #%%
