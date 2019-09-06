@@ -67,7 +67,7 @@ Your images need to be contained in a folder called *overlays*. The images can b
 give the full path including the *overlays* folder. The app will look through all sub folders in the folder you have given and find
 all folders called *overlays*. The path to all *.png* files that are in those folders will be uploaded.
 
-####Data Filtering
+#### Data Filtering
 In the **Data Filtering** section you can filter the data that will be plotted.
 This will not change your dataframe!
 You can choose a value for the minimum track length.
@@ -86,9 +86,10 @@ You can choose to exclude all cells that are in an image where a flag other than
 This can be useful if you want to make sure you took a look at all the images. Simply add a comment to any
 cell, select this option and plot the graphs again, until no data points will be plotted anymore.
 
-####Graphs
+#### Graphs
 In the first radio item menu under **Data filtering**
 You can choose to display different types of graphs:
+
    **1. lineplot:**
    You choose two columns of data, your first column will be the X value your second the Y value
    If you want to display cell migration you should use normalized X and Y coordinates starting from 0,0
@@ -126,7 +127,7 @@ Each other tracked cell in the same image that meats your filter requirements
 will be marked with a blue dot on the image. 
 With the two sliders below the image you can click through the full timelapse and adjust the relative brightness of the image.
 
-####Flagging
+#### Flagging
 If you click on the any of the dots on the image, or on the graph you can enter a comment to a newly created column 'flags' about the cell.
 You can choose to make the comment either for the whole time course, or a single time point.
 
@@ -142,7 +143,7 @@ This is not a location to save your dataframe! The file will be overwritten ever
 You can select to filter out all rows with a specific comment, filter out whole images if they contain a comment,
 or even display a graph showing how often each comment occurs within different conditions.
 
-####Resetting Settings
+#### Resetting Settings
 
 Whenever you change any settings in the app, such as select columns, change filters etc. these settings will be saved
 in the *settings.csv* inside the Cache folder. These settings will be loaded everytime you upload a dataframe to the app.
