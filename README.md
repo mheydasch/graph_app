@@ -12,7 +12,7 @@ If you feel the strict guidelines make it impossible for this tool to be used on
 or you encounter other bugs, issues or feature requests feel free to report these.
 
 ### Getting started:
-To start you have to have a csv file of your data in long format and one or multiple folders called overlays
+To start you have to have a *.csv* file of your data in long format and one or multiple folders called *overlays*
  with images related to that data
 Your dataframe needs to have the following columns:
   1. Columns holding X and Y coordinates of the individual cells
@@ -20,8 +20,9 @@ Your dataframe needs to have the following columns:
   3. A column holding the timepoints
   4. A column holding the unique ids of individual cells including the time. 
    These should be formatted the following: An identifier for the field of view, an Identifier for the tracking ID of the cell
-   An identifier of the time. Each of these should be preceeded by a letter indicating which ID it is, such as 
-   WC2_S0127_E1_T1. Where C2_S0127 is the field of view, 1 is the track ID and 1 is the Timepoint
+   An identifier of the time. Each of these should be preceded by a letter indicating which ID it is, such as 
+   *WC2_S0127_E1_T1*. Where *C2_S0127* is the field of view, The *1* preceded by *E*
+   is the track ID and the *1* preceded by *T* is the timepoint
   5. A column holding the unique ids without the time.
   6. A column which you want to use as a classifier
 
