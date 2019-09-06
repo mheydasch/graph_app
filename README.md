@@ -27,9 +27,9 @@ and the rest is optional.
 To capture the ID of above example you would employ a regular expression such as
 *(?P<Site_ID>W[A-Z][0-9]+_S[0-9]{4})(?P\<TrackID\>_E[0-9]+)(?P\<Timepoint\>_T[0-9]+)*
 It is crucial that your identification has these three different ids:
-  **Site_ID**
-  **TrackID**
-  **Timepoint**
+  * **Site_ID**
+  * **TrackID**
+  * **Timepoint**
 Currently the order of these IDs needs to be exactly this.
 If you are having underscores separating your IDs they need to be captured
 by the regular expression. **Every part** of the ID in your csv file needs to be captured.
@@ -37,9 +37,11 @@ The above regular expression is the standard one, but can be changed by the user
 
 
 ### Functionality
-You can choose to display different types of graphs:
 
-Lineplots, where each line represents the migration track of an individual cell
+####Graphs
+You can choose to display different types of graphs:
+Lineplots:
+  
 
 Two boxplots showing the migration speed and the persistence of migration.
 
