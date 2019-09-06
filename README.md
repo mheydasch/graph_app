@@ -1,10 +1,15 @@
 # graph_app
 This tool is intended to be used for exploration of microscopy data.
 It provides you with the ability to load data, make graphs from it and display the images the data relates to
-when clicking on individual points on the graphs.
+when clicking on individual points on the graphs. 
 
 ### Compatibility
-This tool has been developed on MacOs and been tested on Windows10
+This tool has been developed on MacOs and been tested on Windows10.
+The tool has been undergone limited testing on other people's data sets. Right now
+the formatting of your data needs to follow quite strict guidelines, as explained below.
+For examples you can see example files in the *examples_and_helpers* directory.
+If you feel the strict guidelines make it impossible for this tool to be used on your data,
+or you encounter other bugs, issues or feature requests feel free to report these.
 
 ### Getting started:
 To start you have to have a csv file of your data in long format and one or multiple folders called overlays
