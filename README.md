@@ -39,17 +39,14 @@ The above regular expression is the standard one, but can be changed by the user
 
 ### Functionality
 
-####Launching the app
+#### Launching the app
 To start the app open your terminal and navigate to the folder holding the files by 
-cd /[...]/graph_app
-
+*cd /[...]/graph_app*
 Then start the app by launching it with python from the terminal by typing
-
-python3 app_launcher.py, or launch the script from a python editor
+*python3 app_launcher.py* , or launch the script from a python editor
 
 Progress will be printed to the terminal, as well as the URL the app will be launched on.
-
-Running on http://127.0.0.1:8050/
+*Running on http://127.0.0.1:8050/*
 
 Copy this URL to your browser and hit enter. 
 I recommend using Google Chrome, as Firefox sometimes froze during usage.
