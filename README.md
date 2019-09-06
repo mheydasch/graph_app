@@ -30,6 +30,7 @@ It is crucial that your identification has these three different ids:
   * **Site_ID**
   * **TrackID**
   * **Timepoint**
+
 Currently the order of these IDs needs to be exactly this.
 If you are having underscores separating your IDs they need to be captured
 by the regular expression. **Every part** of the ID in your csv file needs to be captured.
