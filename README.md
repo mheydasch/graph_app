@@ -90,6 +90,8 @@ This can be useful if you want to make sure you took a look at all the images. S
 cell, select this option and plot the graphs again, until no data points will be plotted anymore.
 
 #### Graphs
+To be able to display any graphs you first have to select which columns of your dataframe
+hold what kind of information by using the dropdown menus under **Data organization**.
 In the first radio item menu under **Data filtering**
 You can choose to display different types of graphs:
 
@@ -156,134 +158,43 @@ If you do not want to use previous settings, but want to use the default setting
 ### Help
 To help you get your data in the required format there are several files
 in the folder examples_and_helpers:
-rename.FoV.py is a pythonscript used from the terminal to rename images with standard Nikon naming to an easier to work with format.
-It takes input arguments
-
--d full directory to your images)
-
--i identifiers of your image (for example Channel name). Can be a list, seperated by spaces.
+   *rename.FoV.py* is a pythonscript used from the terminal to rename images with standard Nikon naming to an easier to work with format.
+   It takes input arguments
+   -d full directory to your images)
+   -i identifiers of your image (for example Channel name). Can be a list, seperated by spaces.
 
 
-example_cp_pipeline.cpproj is an example Cell Profiler pipeline for batch processing.
-For tracking we use u-track software from the Danuser lab 
-https://github.com/DanuserLab/u-track
+   *example_cp_pipeline.cpproj* is an example Cell Profiler pipeline for batch processing.
+   For tracking we use u-track software from the Danuser lab 
+   https://github.com/DanuserLab/u-track
 
-track_import.py does collect all the seperate .csv files from the u-track software merges them into a single data frame,
-and bring them into an appropriate format for the app.
-It needs to be run from a python editor, such as Spyder, or PyCharm.
-First the class Experiment_data needs to be initiated with the path to your data, 
-then the normalize_tracks() function needs to be called and then the Experiment_data.tracks object
-needs to be saved as a csv.
+   *track_import.py* does collect all the seperate .csv files from the u-track software merges them into a single data frame,
+   and bring them into an appropriate format for the app.
+   It needs to be run from a python editor, such as Spyder, or PyCharm.
+   First the class Experiment_data needs to be initiated with the path to your data, 
+  then the normalize_tracks() function needs to be called and then the Experiment_data.tracks object
+  needs to be saved as a csv.
 
 
 If you want to make changes to the script it is reccomended to change debug in 
-if __name__ == '__main__':
-    app.run_server(debug=False)
+*if __name__ == '__main__':
+    app.run_server(debug=False)*
 
-to True. In addition there is a testmode flag for the graph plotting in the function plot_graph(). 
+to *True*. In addition there is a testmode flag for the graph plotting in the function plot_graph(). 
 If you are having large datasets you should set this to True for faster testing.
 What this flag does is defined in the plotting functions. Depending on the size of your data 
 you might want to change the subsetting of data. 
 After starting the app you can click on the Callback Graph, next to the Errors to see a rough overview of the apps logic.
 The app is split in four main files.
-app_launcher.py contains the html layout and all the callbacks of the app.
+*app_launcher.py* contains the html layout and all the callbacks of the app.
 
-menu_definitions.py contains the definitions for most menus, buttons and other input options.
+*menu_definitions.py* contains the definitions for most menus, buttons and other input options.
 
-graph_defintions.py contains all the plotting functions
-
-
+*graph_defintions.py* contains all the plotting functions
 
 
 
-Your data should be organized the following way:
-
-A .csv file in long format with columns for:
-
-Data (can be multiple columns)
-
-X and Y coordinates (can be same as data)
-
-Timepoint(should be starting from 1)
-
-Unique ID of each object
-
-A column that holds the unique ID + the timepoint
-
-A classifier for the different groups.
 
 
 
-The naming of these columns is irrelevant. Though default naming exists, you can manually select which column 
-represents which category in the app.
-
-If your data has different but consistent namings and you want to change the default values 
-you need to set the value parameters of the dropdown menus in the file menu_definitions.py to your naming.
-
-These dropdown menus are:
-
-classifier_choice()
-
-identifier_selector()
-
-timepoint_selector()
-
-data_selector()
-
-coordinate_selector()
-
-unique_time_selector
-
-
-In it's current version the app is only optimized for data representing cell migration in two dimensions.
-
-The software is currently optimized for the unique id having the following format:
-
-WWellname_SSitenumber_Etrackid_Ttimepoint, such as:
-
-WC3_S0423_E10_T37
-
-This is relevant for finding the associated images.
-A standard regular expression for this format is given as 
-
-'(?P<Site_ID>W[A-Z][0-9]+_S[0-9]{4})(?P<TrackID>_E[0-9]+)(?P<Timepoint>_T[0-9]+)'
-
-but can be changed.
-It is, however required that each regular expression you change this to contains the three key words:
-Site_ID, TrackID, Timepoint. 
-Each naming of a cell with its time point has to be unique!
-The order of these key words is irrelevant.
-
-This regular expression format is the same as is used in cell profiler. 
-To interactively test your regular expression I recommend using the cell profiler
-Regular expression editor in the tab Metadata.
-The filename of your images needs to contain the Site_ID and the Timepoint to be associated to the data.
-If you want to make more substantial changes to this format  it is necessary to change every piece of code including re.compile
-and re.search statements. 
-
-
-To display plots, upload your csv file with the first upload button either by drag and drop, or by selecting
-it's location.
-This will also display the file as a table, in the app.
-Select which columns are holding which information.
-Select what plot you want to generate.
-Select the filters for the minimum time a cell needs to be tracked and for a minimal distance it should have migrated.
-
-Press the "Display Plots" button.
-This will take some time. Progress is being printed to the terminal.
-Change to the "Graph" tab.
-
-If you want images to be displayed while hovering over the points on the graph you need to give the full path to the folder
-that holds your images in the respective text field and press the "upload_images" button.
-This might take some time, progress again will be printed to the terminal. A subset of the created dictionaries,
-relating keys to filepaths to the images will be printed to the terminal. If no such dictionary is printed, this means
-no images have been found. In this case you should check the path for spelling errors.
-The files can be hidden in subfolders, the given folder must contain all subfolders that contain your files.
-Currently the app will upload ALL png files that are directly in subfolders named 'overlays'. These folders therefore
-must not contain any other png files, but the images you want to be displayed.
-If you want to change the naming of the subfolder edit the variable find_dir in the update() function within 
-the file app_launcher.py.
-
-
-If an error occurs, or you want to use new data, simply relaunch the app.
 
