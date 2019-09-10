@@ -70,3 +70,14 @@ def createFolder(directory):
             os.makedirs(directory)
     except OSError:
         print ('Error: Creating directory. ' + directory)
+        
+def calc_average(dat=[], classifier_column='Classifier', average_column='AreaShape_Area', grouping_column='Metadata_Timepoint'):
+    if average_column+'_median' not in dat.columns:
+        dat[average_column+'_median']='None'
+        med=dat.groupby([grouping_column, classifier_column], as_index=False)[average_column].median()
+        
+        for n, row in med.iterrows():
+            idx=dat[(dat[classifier_column]==row[1]) & (dat[grouping_column]==row[0])].index[0]
+            dat[average_column+'_median'].iloc[idx]=row.loc[average_column]
+    return dat
+    

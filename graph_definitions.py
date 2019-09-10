@@ -34,8 +34,16 @@ def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_colum
     #dat[unique_time_selector]=dat[identifier_column]+'_T'+dat[timepoint_column].astype('str')
 
     classes=list(dat[classifier_column].unique())
+    print(classes)
     X_column=data_column[0]
     Y_column=data_column[1]
+    #excluding rows where the data columns is 'None'
+    #relevant for averaging
+    dat=dat[dat[X_column]!='None']
+    dat=dat[dat[Y_column]!='None']
+    #making sure values are floats
+    dat[X_column]=dat[X_column].astype(float)
+    dat[Y_column]=dat[Y_column].astype(float)
     #initiating traces as a list
     #getting trace IDs from unique IDs (cells)
     print('looping through cells...')
@@ -112,7 +120,7 @@ def migration_distance(dat=[], classifier_column='', identifier_column='',
     distances=distances[distances['cumulative_distance']>distance_filter]
     print('...done calculating')
     classes=list(distances['Classifier'].astype('str').unique())
-    fig=make_subplots(rows=2, cols=1, subplot_titles=['Speed','Persistence', 'Correlation'])
+    fig=make_subplots(rows=1, cols=1)
 
     for xpos, i in enumerate(classes):
         fig.append_trace(trace=go.Box(
@@ -136,20 +144,44 @@ def migration_distance(dat=[], classifier_column='', identifier_column='',
         notched=True), 
         row=2, col=1)
         
-# =============================================================================
-#     for xpos, i in enumerate(classes):
-#         fig.append_trace(trace=go.Scatter(
-#                 y=distances.loc[distances['Classifier']==i]['persistence'],
-#                 x=distances.loc[distances['Classifier']==i]['Speed'],
-#                 customdata=[distances.loc[distances['Classifier']==i][unique_time_selector]],
-#                 name=i,), 
-#                 row=2, col=1)
-# =============================================================================
     fig.update_layout(margin={'l': 40, 'b': 5, 't': 30, 'r': 200},
             height=750, width=750)
 
     return fig
     
+def boxplot(dat=[], classifier_column='', identifier_column='', 
+                       timepoint_column='', data_column='', distance_filter='', 
+                       unique_time_selector='', testmode=False):
+    if testmode==True:
+        dat=dat[0:50]
+        
+    X_column=data_column[0]
+    Y_column=data_column[1]
+    #excluding rows where the data columns is 'None'
+    #relevant for averaging
+    dat=dat[dat[X_column]!='None']
+    dat=dat[dat[Y_column]!='None']
+    #making sure values are floats
+    dat[X_column]=dat[X_column].astype(float)
+    dat[Y_column]=dat[Y_column].astype(float)    
+    classes=list(dat[classifier_column].astype('str').unique())
+    fig=make_subplots(rows=2, cols=1, subplot_titles=classes)
+
+    for xpos, i in enumerate(classes):
+        fig.append_trace(trace=go.Box(
+            y=dat.loc[dat[classifier_column]==i][Y_column],
+            hovertext=dat.loc[dat[classifier_column]==i][unique_time_selector],
+            customdata=[dat.loc[dat[classifier_column]==i][unique_time_selector]],
+            name=i,
+            boxpoints='all',
+            notched=True), 
+            row=1, col=1)
+
+        
+    fig.update_layout(margin={'l': 40, 'b': 5, 't': 30, 'r': 200},
+            height=750, width=750)
+
+    return fig
 
 def time_series(dat=[], classifier_column='', identifier_column='', 
                 timepoint_column='', data_column='', distance_filter='', 

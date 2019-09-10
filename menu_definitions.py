@@ -45,7 +45,8 @@ def RadioItems():
          {'label':'migration_distance', 'value': 'migration_distance'},
          {'label':'time_series', 'value':'time_series'},
          {'label':'corel plot', 'value': 'corel_plot'},
-         {'label':'flag_count', 'value':'flag_count'}],
+         {'label':'flag_count', 'value':'flag_count'},
+         {'label':'boxplot', 'value':'boxplot'}],
     value='lineplot',
     id='graph_selector')
 def graph_reuse():
@@ -104,6 +105,7 @@ def unique_time_selector(df):
             options=timepointoptions,
             placeholder='select a column where the value is unique for timepoint and cell',
             value='unique_time')
+
    
 def timepoint_selector(df):    
     '''
@@ -116,7 +118,52 @@ def timepoint_selector(df):
             options=timepointoptions,
             placeholder='select the timepoint column',
             value='Metadata_Timepoint')
-
+    
+def data_selector(df):
+    columns=df.columns
+    data_options= [{'label' :k, 'value' :k} for k in columns]
+    return dcc.Dropdown(
+            id='data_selector',
+            options=data_options,
+            multi=True,
+            value=['Location_Center_X_Zeroed', 'Location_Center_Y_Zeroed'])
+    
+def coordinate_selector(df):
+    columns=df.columns
+    data_options= [{'label' :k, 'value' :k} for k in columns]
+    return dcc.Dropdown(
+            id='coordinate_selector',
+            options=data_options,
+            multi=True,
+            value=['Location_Center_X', 'Location_Center_Y'])
+def average_button():    
+    return html.Button(id='average_button', n_clicks=0, children='Calculate Average')
+    
+    
+def average_selector(df):    
+    '''
+    dropdown menu to select which column you want to average
+    '''
+    columns=df.columns
+    timepointoptions= [{'label' :k, 'value' :k} for k in columns]
+    return dcc.Dropdown(
+            id='average_selector',
+            options=timepointoptions,
+            placeholder='select the column which you want to average',
+            value='None'
+            )
+def average_grouper(df):
+    '''
+    dropdown menu to select which measurement you want to group the average by
+    '''
+    columns=df.columns
+    timepointoptions= [{'label' :k, 'value' :k} for k in columns]
+    return dcc.Dropdown(
+            id='average_grouper',
+            options=timepointoptions,
+            placeholder='select the column which you want to average',
+            value='None'
+            )
 
 
 def track_length_selector():
@@ -158,22 +205,7 @@ def datatype_selector():
     value='xy',
     id='datatype_selector')
     
-def data_selector(df):
-    columns=df.columns
-    data_options= [{'label' :k, 'value' :k} for k in columns]
-    return dcc.Dropdown(
-            id='data_selector',
-            options=data_options,
-            multi=True,
-            value=['Location_Center_X_Zeroed', 'Location_Center_Y_Zeroed'])
-def coordinate_selector(df):
-    columns=df.columns
-    data_options= [{'label' :k, 'value' :k} for k in columns]
-    return dcc.Dropdown(
-            id='coordinate_selector',
-            options=data_options,
-            multi=True,
-            value=['Location_Center_X', 'Location_Center_Y'])
+
     
 def ID_pattern():
     return dcc.Textarea(

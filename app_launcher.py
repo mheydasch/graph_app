@@ -52,6 +52,7 @@ import pandas as pd
 import sys
 import os
 import re
+from pathlib import Path
 
 
 sys.path.append(os.path.realpath(__file__))
@@ -139,8 +140,18 @@ app.layout = html.Div([
         html.P('Select  a column with format \'Wellname_Sitename_TrackID_Timepoint\''),
         MD.unique_time_selector(df),        
         html.P('Select the column which holds the timepoints:'),
-        MD.timepoint_selector(df)], className= 'six columns'),
+        MD.timepoint_selector(df),
+        
+        dcc.Markdown('''**Data processing**'''),
+        html.P('Select which measurement you want to average'),
+        MD.average_selector(df),
+        html.P('Select by what variable the average should be grouped'),
+        MD.average_grouper(df),
+        MD.average_button(),], className= 'six columns'),
+        
+        
 
+        
 
     
     
@@ -336,22 +347,35 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
                Output('timepoint_selector', 'options'),
                Output('data_selector', 'options'),
                Output('unique_time_selector', 'options'),
-               Output('coordinate_selector', 'options')],
-              [Input('output-data-upload', 'children')])
+               Output('coordinate_selector', 'options'),
+               Output('average_selector', 'options'),
+               Output('average_grouper', 'options')],
+              [Input('output-data-upload', 'children'),
+               Input('flag_storage', 'data')])
 
-def update_dropdown(contents):
+def update_dropdown(contents, flag_storage):
     print('updating menus...')
-    #df=pd.read_json(contents, orient='split')
-    columns=df.columns
+    ctx= dash.callback_context
+    #checking which input was triggeredn
+    if ctx.triggered[0]['prop_id']=='output-data-upload.children':
+        columns=df.columns
+
+    if ctx.triggered[0]['prop_id']=='flag_storage.data':
+        dff=pd.read_csv(flag_storage, index_col='index')
+        columns=dff.columns
+
     col_labels=[{'label' :k, 'value' :k} for k in columns]
     identifier_cols=col_labels
     timepoint_cols=col_labels
     data_cols=col_labels
     unique_time_columns=col_labels
     coordinates=col_labels
+    average=col_labels
+    grouper=col_labels
     print('... menus updated')
 
-    return col_labels, identifier_cols, timepoint_cols, data_cols, unique_time_columns, coordinates
+    return (col_labels, identifier_cols, timepoint_cols, data_cols, 
+            unique_time_columns, coordinates, average, grouper)
 
 #%% update after image folder got parsed 
 @app.callback(Output('image_list', 'data'),
@@ -444,7 +468,8 @@ def filter_graph(track_length_selector, flag_filter, flag_storage, identifier_se
 #%% storing flags to flag sotrage once the submit button is pressed
 @app.callback([Output('flag_storage', 'data'),
               Output('flag_filter', 'options')],
-              [Input('comment_submit', 'n_clicks')],
+              [Input('comment_submit', 'n_clicks'),
+               Input('average_button', 'n_clicks')],
               [State('identifier_selector', 'value'),
                State('track_comment', 'value'),
                State('migration_data', 'clickData'),
@@ -453,11 +478,19 @@ def filter_graph(track_length_selector, flag_filter, flag_storage, identifier_se
                State('flag_storage', 'data'),
                State('click_data_storage', 'data'),
                State('unique_time_selector', 'value'),
-               State('pattern_storage', 'data')
+               State('pattern_storage', 'data'),
+               State('average_selector', 'value'),
+               State('average_grouper', 'value'),
+               State('classifier_choice', 'value')
                ])
-def update_flags(n_clicks, identifier_selector, 
+def update_flags(n_clicks, comment_submit, identifier_selector, 
                  track_comment, clickData, flag_options, flag_filter, 
-                 flag_storage, click_data_storage, unique_time_selector, pattern_storage):
+                 flag_storage, click_data_storage, unique_time_selector, pattern_storage,
+                 average_selector, average_grouper, classifier_choice):
+    #adding average values
+    ctx= dash.callback_context
+    
+    #adding flags
     print(track_comment)
     print('pattern storage: ', pattern_storage)
     #get patterns from user input
@@ -471,50 +504,62 @@ def update_flags(n_clicks, identifier_selector,
         print('flag_storage empty')
     #if click_data is provided
     print(len(df), 'rows')
-    if click_data_storage!=None:
+    if ctx.triggered[0]['prop_id']=='average_button.n_clicks':
+        print('Calculating averages of {} per {} for each class of {}...'.format(average_selector,
+              average_grouper, classifier_choice))
+        dff=AD.calc_average(dat=dff, classifier_column=classifier_choice, average_column=average_selector,
+                        grouping_column=average_grouper)
+    print('...done')
         
-        print('clickdata: ',click_data_storage)
-        #get relevant click data
-        if 'customdata' in click_data_storage['points'][0]:
-            ID=click_data_storage['points'][0]['customdata']
-        if 'hovertext' in click_data_storage['points'][0]: 
-            ID=click_data_storage['points'][0]['hovertext']
-
-        print('ID: ', ID)
-        #if dataframe does not have the 'flag' column create it
-        #create a new column and fill it
-        if 'flags' not in dff.columns:
-            dff['flags']='None'
-            print('flags resetted')
-        
-        #check flag options. If single, add the submitted comment only to 
-        #the selected timepoint
-        if flag_options=='single':
-            dff.loc[dff[unique_time_selector]==ID, 'flags']=track_comment
-            #print('single')
-        #if 'all' remove the timepoint component from the string and add the comment
-        #to all datapoints with that ID like 'WB2_S1324_E4'
-        if flag_options=='all':
-           #print('all')
-           try:
-               Timepoint=re.search(pattern, ID).group('Timepoint')
-               ID=ID.replace(Timepoint,'')
-               print('Timless ID: ', ID)
-               dff.loc[dff[identifier_selector]==ID, 'flags']=track_comment
-           except AttributeError:
-               print('No Timepoint found')  
-               dff.loc[dff[identifier_selector]==ID, 'flags']=track_comment
-
-        #create a list of unique flags
-        flags=list(dff['flags'].unique())
-        #create an options attribute of the flags for the flag_filter dropdwon menu
-        flag_filter=[{'label' :k, 'value' :k} for k in flags]
-        print('flags', flags)
-    #convert the dataframe to a dictionary for storage
+    #add comments if the comment submit button was pressed
+    if ctx.triggered[0]['prop_id']=='comment_submit.n_clicks':
+    
+        if click_data_storage!=None:
+            
+            print('clickdata: ',click_data_storage)
+            #get relevant click data
+            if 'customdata' in click_data_storage['points'][0]:
+                ID=click_data_storage['points'][0]['customdata']
+            if 'hovertext' in click_data_storage['points'][0]: 
+                ID=click_data_storage['points'][0]['hovertext']
+    
+            print('ID: ', ID)
+            #if dataframe does not have the 'flag' column create it
+            #create a new column and fill it
+            if 'flags' not in dff.columns:
+                dff['flags']='None'
+                print('flags resetted')
+            
+            #check flag options. If single, add the submitted comment only to 
+            #the selected timepoint
+            if flag_options=='single':
+                dff.loc[dff[unique_time_selector]==ID, 'flags']=track_comment
+                #print('single')
+            #if 'all' remove the timepoint component from the string and add the comment
+            #to all datapoints with that ID like 'WB2_S1324_E4'
+            if flag_options=='all':
+               #print('all')
+               try:
+                   Timepoint=re.search(pattern, ID).group('Timepoint')
+                   ID=ID.replace(Timepoint,'')
+                   print('Timless ID: ', ID)
+                   dff.loc[dff[identifier_selector]==ID, 'flags']=track_comment
+               except AttributeError:
+                   print('No Timepoint found')  
+                   dff.loc[dff[identifier_selector]==ID, 'flags']=track_comment
+    
+            #create a list of unique flags
+            flags=list(dff['flags'].unique())
+            #create an options attribute of the flags for the flag_filter dropdwon menu
+            flag_filter=[{'label' :k, 'value' :k} for k in flags]
+            print('flags', flags)
     #flag_storage=dff.to_dict() 
     print(len(dff), 'rows')
+    #getting the path of the app
     dir_path = os.path.dirname(os.path.realpath(__file__))
+    #creating a folder 'Cache' if it does not already exist
     AD.createFolder(os.path.join(dir_path, 'Cache'))
+    #savint the flagged dataframe as 'temp.csv' in the 'Cache' folder
     flag_storage=os.path.join(dir_path, 'Cache', 'temp.csv')
     dff.to_csv(flag_storage, index_label='index')
 
@@ -612,7 +657,7 @@ def plot_graph(n_clicks, graph_selector, classifier_choice,
     #the graph_storage dictionary will be updated and the figure and updated dictionary will be returned
     else:
         graph_options={'lineplot':GD.lineplot, 'migration_distance':GD.migration_distance, 'time_series':GD.time_series,
-                       'corel_plot': GD.corel_plot, 'flag_count':GD.flag_count}
+                       'corel_plot': GD.corel_plot, 'flag_count':GD.flag_count, 'boxplot':GD.boxplot}
         fig=graph_options[graph_selector](dat=dff, classifier_column=classifier_choice, 
                             identifier_column=identifier_selector,
                             timepoint_column=timepoint_selector, data_column=data_selector, 
@@ -906,13 +951,17 @@ def hide_graphs(value):
 
 def load_settings(output_data_upload):
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    settings=pd.read_csv(os.path.join(dir_path,'Cache', 'settings.csv')).loc[0]
-    settinglist=[]
-    for enum, column in enumerate(settings):
-        if enum >0:
-            settinglist.append(column)
-    print(settinglist)
-    return settinglist
+    setting_file=Path(os.path.join(dir_path,'Cache', 'settings.csv'))
+    if setting_file.is_file():
+        settings=pd.read_csv(setting_file).loc[0]
+        settinglist=[]
+        for enum, column in enumerate(settings):
+            if enum==5:
+               column=eval(column)
+            if enum >0:
+                settinglist.append(column)
+        print(settinglist)
+        return settinglist
 
 #%% safe current settings
 @app.callback(Output('test_storage', 'children'),
@@ -942,7 +991,7 @@ def safe_settings(graph_selector, classifier_choice, identifier_selector,
     if output_data_upload!=None:
         settings=pd.DataFrame(data={'graph_selector': graph_selector, 'classifier_choice': classifier_choice,
                            'identifier_selector':identifier_selector, 'timepoint_selector': timepoint_selector,
-                           'data_selector':data_selector, 'distance_filter': distance_filter,
+                           'data_selector':[data_selector], 'distance_filter': distance_filter,
                             'graph_reuse':graph_reuse,
                            'flag_filter':flag_filter,'unique_time_selector':unique_time_selector,
                            'track_length_selector':track_length_selector, 'exclude_seen':exclude_seen,
