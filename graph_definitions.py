@@ -42,10 +42,8 @@ def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_colum
     dat=dat[dat[X_column]!='None']
     dat=dat[dat[Y_column]!='None']
     #making sure values are floats
-# =============================================================================
-#     dat[X_column]=dat[X_column].astype(float)
-#     dat[Y_column]=dat[Y_column].astype(float)
-# =============================================================================
+    dat[X_column]=dat[X_column].astype(float)
+    dat[Y_column]=dat[Y_column].astype(float)
     #initiating traces as a list
     #getting trace IDs from unique IDs (cells)
     print('looping through cells...')
