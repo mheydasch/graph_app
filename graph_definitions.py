@@ -42,20 +42,25 @@ def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_colum
     dat=dat[dat[X_column]!='None']
     dat=dat[dat[Y_column]!='None']
     #making sure values are floats
-    dat[X_column]=dat[X_column].astype(float)
-    dat[Y_column]=dat[Y_column].astype(float)
+# =============================================================================
+#     dat[X_column]=dat[X_column].astype(float)
+#     dat[Y_column]=dat[Y_column].astype(float)
+# =============================================================================
     #initiating traces as a list
     #getting trace IDs from unique IDs (cells)
     print('looping through cells...')
     #getting the number of rows for suplots based on the amount of classes
     row_n=len(classes)
-    if row_n==0:
-        print('No classes found, make sure your filters do not exclude all data')
+  
+        
 
     rowlist=np.arange(1, row_n+1, 1)
 
         #defining subplot layout
-    fig=make_subplots(rows=row_n, cols=1, subplot_titles=[str(c) for c in classes])
+    try:
+        fig=make_subplots(rows=row_n, cols=1, subplot_titles=[str(c) for c in classes])
+    except ValueError:
+        print('No classes found, make sure your filters do not exclude all data')
     r_i=0
     #getting max axis values
     max_x=dat[X_column].max()

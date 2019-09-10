@@ -743,8 +743,11 @@ def update_image_overlay(hoverData, image_dict,
 #         #ID=hoverData['points'][0]['hovertext'].replace(re.search(exclusion_nt, hoverData['points'][0]['hovertext']).group(),'')
 #         #print('ID: ',ID)
 # =============================================================================
-    #searching the dictionary for keys fitting the hovertext   
-    imagelist=[i for i in image_dict.keys() if ID in i]
+    #searching the dictionary for keys fitting the hovertext 
+    try:
+        imagelist=[i for i in image_dict.keys() if ID in i]
+    except AttributeError:
+        print('No images have been uploaded')
     if len(imagelist)==0:
         print('Key Error, no images associated with {} found.'.format(ID))
     
