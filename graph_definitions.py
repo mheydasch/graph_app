@@ -34,7 +34,7 @@ def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_colum
     #dat[unique_time_selector]=dat[identifier_column]+'_T'+dat[timepoint_column].astype('str')
 
     classes=list(dat[classifier_column].unique())
-    print(classes)
+   
     X_column=data_column[0]
     Y_column=data_column[1]
     #excluding rows where the data columns is 'None'
@@ -42,13 +42,17 @@ def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_colum
     dat=dat[dat[X_column]!='None']
     dat=dat[dat[Y_column]!='None']
     #making sure values are floats
-    dat[X_column]=dat[X_column].astype(float)
-    dat[Y_column]=dat[Y_column].astype(float)
+# =============================================================================
+#     dat[X_column]=dat[X_column].astype(float)
+#     dat[Y_column]=dat[Y_column].astype(float)
+# =============================================================================
     #initiating traces as a list
     #getting trace IDs from unique IDs (cells)
     print('looping through cells...')
     #getting the number of rows for suplots based on the amount of classes
     row_n=len(classes)
+    if row_n==0:
+        print('No classes found, make sure your filters do not exclude all data')
 
     rowlist=np.arange(1, row_n+1, 1)
 
@@ -86,10 +90,7 @@ def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_colum
             name=c,
             ),
             row=int(rowlist[math.floor(r_i)]) , col=1)
-
-
-
-            
+         
         #adding 1 to the row indicator, so that every class will be 
         #plottet in a new row
         fig.update_yaxes(range=[min_y*1.05, max_y*1.05], row=int(rowlist[math.floor(r_i)]), col=1)
