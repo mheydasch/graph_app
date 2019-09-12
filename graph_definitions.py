@@ -67,6 +67,11 @@ def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_colum
     min_x=dat[X_column].min()
     max_y=dat[Y_column].max()
     min_y=dat[Y_column].min()
+    if type(min_y)!=float or type(min_x)!=float:
+        max_x=float(max_x)
+        min_x=float(min_x)
+        max_y=float(max_y)
+        min_y=float(min_y)
     #looping through the clases
     for i in classes:
         #subsetting the data by the class
