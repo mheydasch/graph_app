@@ -129,7 +129,7 @@ def migration_distance(dat=[], classifier_column='', identifier_column='',
     distances=distances[distances['cumulative_distance']>distance_filter]
     print('...done calculating')
     classes=list(distances['Classifier'].astype('str').unique())
-    fig=make_subplots(rows=1, cols=1)
+    fig=make_subplots(rows=2, cols=1, subplot_titles=['Speed','Persistence'])
 
     for xpos, i in enumerate(classes):
         fig.append_trace(trace=go.Box(

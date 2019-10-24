@@ -29,6 +29,8 @@ to do:
     Important:
         images with albertos dataset are not containing all cells
         comment adding for albertos dataset does not work
+        
+    remove seg error from settings file, will cause an error when the dataframe does not have flags column
 '''
 import base64
 import datetime
@@ -645,8 +647,7 @@ def plot_graph(n_clicks, graph_selector, classifier_choice,
     
     print(flag_filter)
     #print(type(flag_filter))
-    
-    if flag_filter is not None:
+    if flag_filter is not None and 'flags' in dff.columns:
         for i in flag_filter:
             dff=dff[dff['flags']!=i]
     #if the current graph option is already stored in the graph storage, 
