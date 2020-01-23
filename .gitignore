@@ -1,0 +1,11 @@
+# Don't track content of these folders
+__pycache__/
+.DS_store/
+
+
+*.csv
+*.png
+*.tiff
+*.tif
+*.html
+

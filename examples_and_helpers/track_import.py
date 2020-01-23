@@ -45,6 +45,11 @@ class Experiment_data:
         track_list=[]
         for i in self.i_dirs:
             temp=pd.read_csv(i, header=0)
+            #removing unwanted prefixes from column names
+            for i in temp.columns:
+                ir=i.replace('Image_', '')
+                ir=ir.replace('nuc_', '')
+                temp=temp.rename(columns={i:ir})
             track_list.append(temp)
         self.tracks = pd.concat(track_list, axis=0, sort=True)
         self.tracks=self.tracks.reset_index()

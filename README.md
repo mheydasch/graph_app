@@ -25,6 +25,7 @@ Your dataframe needs to have the following columns:
    is the track ID and the *1* preceded by *T* is the timepoint
   5. A column holding the unique ids without the time.
   6. A column which you want to use as a classifier
+ 
 
 Your images need to contain the same identifier as the one in your csv file, without the unique cell identifier.
 For example with the above mentioned unique ID: *WC2_S0127_E1_T1* the corresponding image can be named
