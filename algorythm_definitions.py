@@ -81,3 +81,19 @@ def calc_average(dat=[], classifier_column='Classifier', average_column='AreaSha
         dat[average_column+'_median'].iloc[idx]=float(row.loc[average_column])
     return dat
     
+def go_one_up(path, mode='folder'):
+    '''
+    takes one folder upwards of the given input folder
+    mode can be either 'folder', or 'file'
+    '''
+  
+    split_path=vars()['path'].split('/')
+    one_up='/'+split_path[0]
+    if mode=='folder':
+        for n, i in enumerate(split_path[:-3]):
+            one_up=one_up=os.path.join(one_up, split_path[n+1])  
+    if mode=='file':
+        for n, i in enumerate(split_path[:-2]):
+            one_up=one_up=os.path.join(one_up, split_path[n+1])
+    one_up=one_up+'/'
+    return one_up

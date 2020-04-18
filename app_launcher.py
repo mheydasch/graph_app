@@ -47,6 +47,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 import imageio
 import json
+import plotly.graph_objects as go
 
 from natsort import natsorted
 
@@ -201,6 +202,7 @@ app.layout = html.Div([
                                      html.Div([html.P('Graph Display: '),
                                                html.Div([dcc.Graph(id='migration_data', )],
                                                         id='graph_div'),
+                                               MD.plot_save_button(),          
                                                ], 
                                           className= 'six columns'),
                                                #graph for showing the image
@@ -667,6 +669,32 @@ def plot_graph(n_clicks, graph_selector, classifier_choice,
         graph_storage.update({graph_selector:fig})
         return fig, graph_storage
 
+#saving the graph to svg at same location as specified for datatable
+@app.callback(Output('plot_save_button', 'children'),
+      [Input('plot_save_button', 'n_clicks')],
+      [State('migration_data', 'figure'),
+       State('save_path', 'value'),
+       State('graph_selector', 'value')],)
+                             
+def download_svg(n_clicks, migration_data, save_path, graph_selector):
+    #print(save_path)
+    fig=go.Figure(migration_data)
+    #print(fig)
+    path=save_path
+    prefix=graph_selector
+    #if the path dictates a csv file, the filename will be replaced
+    #by an appropriate graph name
+    if path.endswith('.csv'):
+        path=AD.go_one_up(path, mode='file')
+        filename=prefix+'.svg'
+        path=os.path.join(path, filename)
+    #if path does not end in svg, add appropriate filename
+    if path.endswith('.svg')!=True:
+        filename=prefix+'.svg'
+        path=os.path.join(path, filename)
+    fig.write_image(path)
+    print('file saved under', path)
+    return None
 #%% 
 @app.callback(Output('image_dict', 'data'),
               [Input('migration_data', 'clickData')],

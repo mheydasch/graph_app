@@ -71,6 +71,9 @@ def generate_table(df):
     
 def plot_button():
     return html.Button(id='plot_button', n_clicks=0, children='Display plots')
+
+def plot_save_button():
+    return html.Button(id='plot_save_button', n_clicks=0, children='Download plot as svg')
 #dropdown layout
 def classifier_choice(df):
     '''

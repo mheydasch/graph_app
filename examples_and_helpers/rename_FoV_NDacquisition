@@ -65,22 +65,26 @@ def rename_files(path, identifier):
                 #identifier=re.search(identifierpattern, i).group().strip('.tif') 
                 fov = re.search(fovpattern, i).group().replace('XY', '')
                 #date = re.search(datepattern, i).group().replace("_", "")
-                if int(fov) < 11:
-                    well='B3'
+# =============================================================================
+#                 if int(fov) < 11:
+#                     well='B3'
+# =============================================================================
                 if int(fov) >11 & int(fov) < 21:
-                    well='B4'
+                    well='B3'
                 if int(fov) >21 & int(fov) < 31:
-                    well='C3'
+                    well='B4'
                 if int(fov) >31 & int(fov) < 41:
-                    well='C4'
+                    well='C3'
                 if int(fov) >41 & int(fov) < 51:
-                    well='D3'
+                    well='C4'
                 if int(fov) >51 & int(fov) < 61:
-                    well='D4'
+                    well='D3'
                 if int(fov) >61 & int(fov) < 71:
-                    well='E3'
+                    well='D4'
                 if int(fov) >71 & int(fov) < 81:
                     well='E3'
+                if int(fov) >81:
+                    well='E4'
                 #time=re.search(timepattern, i).group()
                 file = os.path.join(path, i)
                 #creates a 3 characters long random string of uppercase letters and digits and replaces the wellname with it

@@ -68,22 +68,23 @@ def rename_files(path, identifier):
 # =============================================================================
 #                 if int(fov) < 11:
 #                     well='B3'
-#                 if int(fov) >11 & int(fov) < 21:
+#                 if int(fov) >10 and int(fov) < 21:
 #                     well='B4'
-#                 if int(fov) >21 & int(fov) < 31:
+#                 if int(fov) >20 and int(fov) < 31:
 #                     well='C3'
-#                 if int(fov) >31 & int(fov) < 41:
+#                 if int(fov) >30 and int(fov) < 41:
 #                     well='C4'
-#                 if int(fov) >41 & int(fov) < 51:
+#                 if int(fov) >40 and int(fov) < 51:
 #                     well='D3'
-#                 if int(fov) >51 & int(fov) < 61:
+#                 if int(fov) >50 and int(fov) < 61:
 #                     well='D4'
-#                 if int(fov) >61 & int(fov) < 71:
+#                 if int(fov) >60 and int(fov) < 71:
 #                     well='E3'
-#                 if int(fov) >71 & int(fov) < 81:
-#                     well='E3'
+#                 if int(fov) >70 and int(fov) < 81:
+#                     well='E4'
 # =============================================================================
-
+                if int(fov) < 31:
+                    well='exclude'
                 if int(fov) >30 and int(fov) < 41:
                     well='C3'
                 if int(fov) >40 and int(fov) < 51:
@@ -92,12 +93,14 @@ def rename_files(path, identifier):
                     well='D3'
                 if int(fov) >60 and int(fov) < 81:
                     well='D5'
-                try:
-                    well
-                except NameError:
-                    well=None
-                if well is None:
-                    well='XY'+fov
+# =============================================================================
+#                 try:
+#                     well
+#                 except NameError:
+#                     well=None
+#                 if well is None:
+#                     well='XY'+fov
+# =============================================================================
                 #time=re.search(timepattern, i).group()
                 file = os.path.join(path, i)
                 #creates a 3 characters long random string of uppercase letters and digits and replaces the wellname with it

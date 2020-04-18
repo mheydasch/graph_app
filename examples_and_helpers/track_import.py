@@ -39,7 +39,7 @@ class Experiment_data:
                     self.i_dirs.append(os.path.join(root, csv))            
         return self.i_dirs
    
-#distances.loc[distances.unique_id.str.contains('C'), 'Classifier']='Ctrl'
+    #distances.loc[distances.unique_id.str.contains('C'), 'Classifier']='Ctrl'
 
     def load_tracks(self):
         track_list=[]
@@ -118,10 +118,27 @@ class Experiment_data:
             self.tracks['Location_Center_X_Zeroed'][self.tracks['unique_id']==name]=single_track['Location_Center_X_Zeroed']
         #self.tracks.loc[self.tracks.unique_id.str.contains('B'), 'Classifier']='pix'
         #self.tracks.loc[self.tracks.unique_id.str.contains('C'), 'Classifier']='Ctrl'
-        self.tracks.loc[self.tracks.Metadata_Well.str.contains('C2'), 'Classifier']='hapto_Ctrl'
-        self.tracks.loc[self.tracks.Metadata_Well.str.contains('B2'), 'Classifier']='hapto_pix'
-        self.tracks.loc[self.tracks.Metadata_Well.str.contains('B3'), 'Classifier']='chemo_pix'
-        self.tracks.loc[self.tracks.Metadata_Well.str.contains('C3'), 'Classifier']='chemo_Ctrl'
+# =============================================================================
+#         self.tracks.loc[self.tracks.Metadata_Well.str.contains('A1'), 'Classifier']='hapto_pix'
+#         self.tracks.loc[self.tracks.Metadata_Well.str.contains('A2'), 'Classifier']='chemo_pix'
+# =============================================================================
+        self.tracks.loc[self.tracks.Metadata_Well.str.contains('B1'), 'Classifier']='hapto_DLC'
+        self.tracks.loc[self.tracks.Metadata_Well.str.contains('B2'), 'Classifier']='chemo_DLC'
+        self.tracks.loc[self.tracks.Metadata_Well.str.contains('B3'), 'Classifier']='1EGF_DLC'
+        self.tracks.loc[self.tracks.Metadata_Well.str.contains('B4'), 'Classifier']='EGF+PDGF_DLC'
+# =============================================================================
+#         self.tracks.loc[self.tracks.Metadata_Well.str.contains('B5'), 'Classifier']='10EGF_DLC'
+# =============================================================================
+        self.tracks.loc[self.tracks.Metadata_Well.str.contains('C1'), 'Classifier']='hapto_CTRL'
+        self.tracks.loc[self.tracks.Metadata_Well.str.contains('C2'), 'Classifier']='chemo_CTRL'
+        self.tracks.loc[self.tracks.Metadata_Well.str.contains('C3'), 'Classifier']='01EGF_CTRL'
+        self.tracks.loc[self.tracks.Metadata_Well.str.contains('C4'), 'Classifier']='EGF+PDGF_CTRL'
+# =============================================================================
+#         self.tracks.loc[self.tracks.Metadata_Well.str.contains('C5'), 'Classifier']='10EGF_CTRL'
+#         self.tracks.loc[self.tracks.Metadata_Well.str.contains('D1'), 'Classifier']='hapto_Notrans'
+#         self.tracks.loc[self.tracks.Metadata_Well.str.contains('D2'), 'Classifier']='chemo_Notrans'        
+# =============================================================================
+        
 
 
         
