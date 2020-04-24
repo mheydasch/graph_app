@@ -694,7 +694,7 @@ def download_svg(n_clicks, migration_data, save_path, graph_selector):
         path=os.path.join(path, filename)
     fig.write_image(path)
     print('file saved under', path)
-    return None
+    return 'Download plot as svg'
 #%% 
 @app.callback(Output('image_dict', 'data'),
               [Input('migration_data', 'clickData')],
@@ -1041,4 +1041,4 @@ def safe_settings(graph_selector, classifier_choice, identifier_selector,
 
 #%%
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=False)
