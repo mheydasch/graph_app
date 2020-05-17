@@ -83,16 +83,22 @@ def rename_files(path, identifier):
 #                 if int(fov) >70 and int(fov) < 81:
 #                     well='E4'
 # =============================================================================
-                if int(fov) < 31:
+                if int(fov) < 11:
                     well='exclude'
+                if int(fov) >11 and int(fov) < 20:
+                    well='B2'
+                if int(fov) >20 and int(fov) < 31:
+                    well='C2'
                 if int(fov) >30 and int(fov) < 41:
+                    well='B3'
+                if int(fov) >40 and int(fov) < 41:
                     well='C3'
-                if int(fov) >40 and int(fov) < 51:
+                if int(fov) >50 and int(fov) < 61:
+                    well='B4'
+                if int(fov) >60 and int(fov) < 71:
                     well='C4'
-                if int(fov) >50 and int(fov) < 71:
-                    well='D3'
-                if int(fov) >60 and int(fov) < 81:
-                    well='D5'
+                if int(fov) >70: 
+                    well='exclude'
 # =============================================================================
 #                 try:
 #                     well
