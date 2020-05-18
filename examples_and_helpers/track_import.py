@@ -21,9 +21,9 @@ class Experiment_data:
         returns a list with all csv files in the KD folder
         '''
         #pattern: must end with '.csv'
-        csv_find=re.compile('tracks\.csv$')
+        csv_find=re.compile('REF52nuc\.csv$')
         #finds the directory with that specific name
-        find_dir='trackXY'
+        find_dir='out_'
         self.i_dirs=[]
         #Knockdown pattern, must match inserted variable self.__KD followed by '/'
         #and one or more digits
@@ -44,7 +44,7 @@ class Experiment_data:
     def load_tracks(self):
         track_list=[]
         for i in self.i_dirs:
-            temp=pd.read_csv(i, header=0)
+            temp=pd.read_csv(i, header=1)
             #removing unwanted prefixes from column names
             for i in temp.columns:
                 ir=i.replace('Image_', '')
@@ -59,7 +59,7 @@ class Experiment_data:
                 i='0'+i
             self.tracks.loc[enum, 'Metadata_Site']=i
         self.tracks['unique_id']='W'+self.tracks['Metadata_Well'].astype('str')+\
-        '_S'+self.tracks['Metadata_Site'].astype('str')+'_E'+self.tracks['track_id'].astype('str')
+        '_S'+self.tracks['Metadata_Site'].astype('str')+'_E'+self.tracks['TrackObjects_Label'].astype('str')
         self.tracks['unique_time']=self.tracks['unique_id']+'_T'+self.tracks['Metadata_Timepoint'].astype('str')
 # =============================================================================
 #         for line, i in enumerate(self.tracks['Location_Center_X']):
@@ -122,17 +122,17 @@ class Experiment_data:
 #         self.tracks.loc[self.tracks.Metadata_Well.str.contains('A1'), 'Classifier']='hapto_pix'
 #         self.tracks.loc[self.tracks.Metadata_Well.str.contains('A2'), 'Classifier']='chemo_pix'
 # =============================================================================
-        self.tracks.loc[self.tracks.Metadata_Well.str.contains('B1'), 'Classifier']='hapto_DLC'
-        self.tracks.loc[self.tracks.Metadata_Well.str.contains('B2'), 'Classifier']='chemo_DLC'
-        self.tracks.loc[self.tracks.Metadata_Well.str.contains('B3'), 'Classifier']='1EGF_DLC'
-        self.tracks.loc[self.tracks.Metadata_Well.str.contains('B4'), 'Classifier']='EGF+PDGF_DLC'
+        self.tracks.loc[self.tracks.Metadata_Well.str.contains('B2'), 'Classifier']='hapto_DLC'
+        self.tracks.loc[self.tracks.Metadata_Well.str.contains('B3'), 'Classifier']='hapto_DLC'
+        self.tracks.loc[self.tracks.Metadata_Well.str.contains('B4'), 'Classifier']='chemo_DLC'
+#        self.tracks.loc[self.tracks.Metadata_Well.str.contains('B4'), 'Classifier']='EGF+PDGF_DLC'
 # =============================================================================
 #         self.tracks.loc[self.tracks.Metadata_Well.str.contains('B5'), 'Classifier']='10EGF_DLC'
 # =============================================================================
-        self.tracks.loc[self.tracks.Metadata_Well.str.contains('C1'), 'Classifier']='hapto_CTRL'
-        self.tracks.loc[self.tracks.Metadata_Well.str.contains('C2'), 'Classifier']='chemo_CTRL'
-        self.tracks.loc[self.tracks.Metadata_Well.str.contains('C3'), 'Classifier']='01EGF_CTRL'
-        self.tracks.loc[self.tracks.Metadata_Well.str.contains('C4'), 'Classifier']='EGF+PDGF_CTRL'
+        self.tracks.loc[self.tracks.Metadata_Well.str.contains('C2'), 'Classifier']='hapto_CTRL'
+        self.tracks.loc[self.tracks.Metadata_Well.str.contains('C3'), 'Classifier']='hapto_CTRL'
+        self.tracks.loc[self.tracks.Metadata_Well.str.contains('C4'), 'Classifier']='chemo_CTRL'
+#        self.tracks.loc[self.tracks.Metadata_Well.str.contains('C4'), 'Classifier']='EGF+PDGF_CTRL'
 # =============================================================================
 #         self.tracks.loc[self.tracks.Metadata_Well.str.contains('C5'), 'Classifier']='10EGF_CTRL'
 #         self.tracks.loc[self.tracks.Metadata_Well.str.contains('D1'), 'Classifier']='hapto_Notrans'
