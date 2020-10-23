@@ -42,6 +42,11 @@ Currently the order of these IDs needs to be exactly this.
 If you are having underscores separating your IDs they need to be captured
 by the regular expression. **Every part** of the ID in your csv file needs to be captured.
 The above regular expression is the standard one, but can be changed by the user
+The image only needs to include the Site_ID and Timepoint. 
+It is not an issue if your data is not a time series. Simply add a timepoint ID to your data.
+It does not matter if you have not more than one timepoint, but you still need to define it
+as timepoint 1 in your data.
+
 
 
 ### Functionality
@@ -89,6 +94,15 @@ other graphs.
 You can choose to exclude all cells that are in an image where a flag other than 'None' was added to any cell.
 This can be useful if you want to make sure you took a look at all the images. Simply add a comment to any
 cell, select this option and plot the graphs again, until no data points will be plotted anymore.
+
+A new data filtering option is available.
+
+From the dropdown menu
+
+**Do you want to filter by any other value?**
+
+you can select any column of your dataset and enter a number in the numeric field below as a threshold. If the number is positive
+all data where that column is below that threshold will be excluded. If the number is negative all data above that threshold will be excluded.
 
 #### Graphs
 To be able to display any graphs you first have to select which columns of your dataframe
