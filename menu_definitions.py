@@ -214,7 +214,7 @@ def custom_filter_dropdown(df):
             id='custom_filter_dropdown',
             options=identifieroptions,
             placeholder='select a column as filter',
-            value='unique_id')
+            value='none')
 def custom_filter_numeric():
     '''
     input box for custom filter

@@ -209,4 +209,16 @@ for i, row in image1.tracks.iterrows():
 #%%
 data.tracks['roundness']=data.tracks['AreaShape_MinorAxisLength']/data.tracks['AreaShape_MajorAxisLength']       
 #%%
-data.tracks.loc[(data.tracks['Metadata_Site'] > 10) & (data.tracks['Metadata_Site'] < 21), 'Classifier']='1B2'
+            self.tracks['Metadata_Timepoint']+=1
+            for enum, i in enumerate(self.tracks['Metadata_Site'].astype('str')):
+                while len(i)<4:
+                    i='0'+i
+                self.tracks.loc[enum, 'Metadata_Site']=i
+            self.tracks['unique_id']='W'+self.tracks['Metadata_Well'].astype('str')+\
+            '_S'+self.tracks['Metadata_Site'].astype('str')+'_E'+self.tracks['track_id'].astype('str')
+            self.tracks['unique_time']=self.tracks['unique_id']+'_T'+self.tracks['Metadata_Timepoint'].astype('str')
+            for line, i in enumerate(self.tracks['Location_Center_X']):
+                self.tracks.loc[line, 'unique_id']='W'+self.tracks.loc[line, 'Metadata_Well']+\
+                '_'+'S'+str(self.tracks.loc[line, 'Metadata_Site'])+'_'+'E'+str(self.tracks.loc[line, 'track_id'])
+#%%
+data.tracks['unique_id']='W'+data.tracks['Classifier']+'_S'+data.tracks['Metadata_Site'].astype('str')+'_E'+data.tracks['index'].astype('str')

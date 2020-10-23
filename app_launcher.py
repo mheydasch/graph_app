@@ -358,7 +358,8 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
                Output('unique_time_selector', 'options'),
                Output('coordinate_selector', 'options'),
                Output('average_selector', 'options'),
-               Output('average_grouper', 'options')],
+               Output('average_grouper', 'options'),
+               Output('custom_filter_dropdown', 'options')],
               [Input('output-data-upload', 'children'),
                Input('flag_storage', 'data')])
 
@@ -381,10 +382,12 @@ def update_dropdown(contents, flag_storage):
     coordinates=col_labels
     average=col_labels
     grouper=col_labels
+    #custom=col_labels.append([{'label':'none', 'value':'none'}])
+    custom_filter=col_labels
     print('... menus updated')
 
     return (col_labels, identifier_cols, timepoint_cols, data_cols, 
-            unique_time_columns, coordinates, average, grouper)
+            unique_time_columns, coordinates, average, grouper, custom_filter)
 
 #%% update after image folder got parsed 
 @app.callback(Output('image_list', 'data'),
@@ -662,7 +665,11 @@ def plot_graph(n_clicks, graph_selector, classifier_choice,
         for i in flag_filter:
             dff=dff[dff['flags']!=i]
     if custom_filter_dropdown!='none':
-        dff=dff[custom_filter_dropdown]<custom_filter_numeric
+        if custom_filter_numeric > 0:
+            dff=dff[dff[custom_filter_dropdown]>custom_filter_numeric]
+        if custom_filter_numeric < 0: 
+            dff=dff[dff[custom_filter_dropdown]<abs(custom_filter_numeric)]
+
     print('data where {} is less than {} are excluded'.format(custom_filter_dropdown, custom_filter_numeric))
     #if the current graph option is already stored in the graph storage, 
     #the stored graph will be displayed
@@ -990,9 +997,7 @@ def hide_graphs(value):
                Output('ID_pattern', 'value'),
                Output('save_path', 'value'),
                Output('Image_folder', 'value'),
-               Output('plot_hider' ,'value'),
-               Output('custom_filter_dropdown', 'value'),
-               Output('custom_filter_numeric', 'value')],
+               Output('plot_hider' ,'value')],
                [Input('output-data-upload', 'children')])
 
 def load_settings(output_data_upload):
@@ -1025,17 +1030,15 @@ def load_settings(output_data_upload):
                Input('ID_pattern', 'value'),
                Input('save_path', 'value'),
                Input('Image_folder', 'value'),
-               Input('plot_hider' ,'value'),
-               Input('custom_filter_dropdown', 'value'),
-               Input('custom_filter_numeric', 'value')],
+               Input('plot_hider' ,'value')],
                [State('output-data-upload', 'children')])
 def safe_settings(graph_selector, classifier_choice, identifier_selector,
                   timepoint_selector, data_selector, distance_filter,
                   graph_reuse, flag_filter, unique_time_selector,
                   track_length_selector, exclude_seen,
                   ID_pattern, save_path,
-                  Image_folder, plot_hider, output_data_upload, custom_filter_dropdown,
-                  custom_filter_numeric):
+                  Image_folder, plot_hider, output_data_upload
+                  ):
     
     if output_data_upload!=None:
         settings=pd.DataFrame(data={'graph_selector': graph_selector, 'classifier_choice': classifier_choice,
@@ -1047,9 +1050,7 @@ def safe_settings(graph_selector, classifier_choice, identifier_selector,
                            'ID_pattern': ID_pattern,
                            'save_path': save_path,
                            'Image_folder': Image_folder, 
-                           'plot_hider':plot_hider,
-                           'custom_filter_dropdown':custom_filter_dropdown,
-                           'custom_filter_numeric':custom_filter_numeric}, index=[1,2])
+                           'plot_hider':plot_hider,}, index=[1,2])
         dir_path = os.path.dirname(os.path.realpath(__file__))
         AD.createFolder(os.path.join(dir_path, 'Cache'))
         setting_storage=os.path.join(dir_path, 'Cache', 'settings.csv')
