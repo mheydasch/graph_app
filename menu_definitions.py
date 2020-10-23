@@ -169,7 +169,7 @@ def average_grouper(df):
             value='None'
             )
 
-
+#%% Filters
 def track_length_selector():
     '''
     input box for minimum track length
@@ -202,6 +202,28 @@ def distance_filter():
                      type='number',
                      value=30,
                      id='distance_filter')
+    
+def custom_filter_dropdown(df):
+    '''
+    dropdown menu to select which data type to filter by 
+    '''
+    columns=df.columns
+    identifieroptions= [{'label' :k, 'value' :k} for k in columns]
+    identifieroptions.append({'label':'none', 'value':'none'})
+    return dcc.Dropdown(
+            id='custom_filter_dropdown',
+            options=identifieroptions,
+            placeholder='select a column as filter',
+            value='unique_id')
+def custom_filter_numeric():
+    '''
+    input box for custom filter
+    '''
+    return dcc.Input(placeholder='Enter a value...',
+                     type='number',
+                     value=0,
+                     id='custom_filter_numeric')  
+    
 def datatype_selector():
     return dcc.RadioItems(options=[
         {'label': 'X, Y coordinates', 'value': 'xy'},
@@ -210,7 +232,7 @@ def datatype_selector():
     id='datatype_selector')
     
 
-    
+#%% Patterns    
 def ID_pattern():
     return dcc.Textarea(
             value='(?P<Site_ID>W[A-Z][0-9]+_S[0-9]{4})(?P<TrackID>_E[0-9]+)(?P<Timepoint>_T[0-9]+)',

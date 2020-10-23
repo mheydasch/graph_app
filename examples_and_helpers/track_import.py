@@ -6,6 +6,7 @@ Created on Mon Jun 24 11:34:49 2019
 @author: max
 """
 
+
 import os
 import re
 import functools
@@ -21,9 +22,9 @@ class Experiment_data:
         returns a list with all csv files in the KD folder
         '''
         #pattern: must end with '.csv'
-        csv_find=re.compile('REF52nuc\.csv$')
+        csv_find=re.compile('REF52.*\.csv$')
         #finds the directory with that specific name
-        find_dir='out_'
+        find_dir='out'
         self.i_dirs=[]
         #Knockdown pattern, must match inserted variable self.__KD followed by '/'
         #and one or more digits
@@ -43,29 +44,74 @@ class Experiment_data:
 
     def load_tracks(self):
         track_list=[]
+        image_list=[]
+        time_series=False
         for i in self.i_dirs:
-            temp=pd.read_csv(i, header=1)
-            #removing unwanted prefixes from column names
-            for i in temp.columns:
-                ir=i.replace('Image_', '')
-                ir=ir.replace('nuc_', '')
-                temp=temp.rename(columns={i:ir})
-            track_list.append(temp)
+            if 'cells' in i:
+                #header needs to be changed depending on the amount of headers in each csv file.
+                temp=pd.read_csv(i, header=0)
+
+    # =============================================================================
+                #removing unwanted prefixes from column names
+                #if time_series==True:
+                for i in temp.columns:
+                     ir=i.replace('Image_', '')
+                     ir=ir.replace('nuc_', '')
+                     try:
+                         ir=ir.replace(re.search('cells[0-9]?_', ir), '')
+                     except:
+                         pass
+                     temp=temp.rename(columns={i:ir})
+
+                track_list.append(temp)
+            if 'Image' in i:
+                temp=pd.read_csv(i, header=0)
+                image_list.append(temp)  
+        if 'Image' in i:        
+            image_data=pd.concat(image_list, axis=0, sort=True)
         self.tracks = pd.concat(track_list, axis=0, sort=True)
         self.tracks=self.tracks.reset_index()
-        self.tracks['Metadata_Timepoint']+=1
-        for enum, i in enumerate(self.tracks['Metadata_Site'].astype('str')):
-            while len(i)<4:
-                i='0'+i
-            self.tracks.loc[enum, 'Metadata_Site']=i
-        self.tracks['unique_id']='W'+self.tracks['Metadata_Well'].astype('str')+\
-        '_S'+self.tracks['Metadata_Site'].astype('str')+'_E'+self.tracks['TrackObjects_Label'].astype('str')
-        self.tracks['unique_time']=self.tracks['unique_id']+'_T'+self.tracks['Metadata_Timepoint'].astype('str')
-# =============================================================================
-#         for line, i in enumerate(self.tracks['Location_Center_X']):
-#             self.tracks.loc[line, 'unique_id']='W'+self.tracks.loc[line, 'Metadata_Well']+\
-#             '_'+'S'+str(self.tracks.loc[line, 'Metadata_Site'])+'_'+'E'+str(self.tracks.loc[line, 'track_id'])
-# =============================================================================
+        self.track_list=track_list
+        #in case of time series
+
+        if time_series==True:
+            self.tracks['Metadata_Timepoint']+=1
+            for enum, i in enumerate(self.tracks['Metadata_Site'].astype('str')):
+                while len(i)<4:
+                    i='0'+i
+                self.tracks.loc[enum, 'Metadata_Site']=i
+            self.tracks['unique_id']='W'+self.tracks['Metadata_Well'].astype('str')+\
+            '_S'+self.tracks['Metadata_Site'].astype('str')+'_E'+self.tracks['track_id'].astype('str')
+            self.tracks['unique_time']=self.tracks['unique_id']+'_T'+self.tracks['Metadata_Timepoint'].astype('str')
+            for line, i in enumerate(self.tracks['Location_Center_X']):
+                self.tracks.loc[line, 'unique_id']='W'+self.tracks.loc[line, 'Metadata_Well']+\
+                '_'+'S'+str(self.tracks.loc[line, 'Metadata_Site'])+'_'+'E'+str(self.tracks.loc[line, 'track_id'])
+        
+        #in case of double columns
+        double_header=False
+        if double_header==True:
+            n_exclude=re.compile('\.[0-9]')
+            head=self.tracks.columns
+            cols=self.tracks.loc[0].values
+            l=['index']
+            for n, i in enumerate(head):
+                if i!='index':
+                    try:
+                       i=i.replace(re.search(n_exclude, i).group(), '')
+                         
+                    except: AttributeError
+                    
+                    l.append(str(i)+'_'+str(cols[n]))  
+            self.tracks.columns=l
+            self.tracks=self.tracks.drop(0, axis=0)
+            self.tracks = self.tracks.loc[:,~self.tracks.columns.duplicated()]
+            self.tracks.rename(columns={'Image_Metadata_Site':'Metadata_Site'}, inplace=True)
+        if 'Image' in i:    
+            self.image_data=image_data
+            #self.tracks['background'][self.tracks['Image_Metadata_Site']==image_data['Metadata_Site']]=image_data['Intensity_LowerQuartileIntensity_DLC']
+            
+            #data.tracks['background'][self.tracks['Image_Metadata_Site']==data.image_data['Metadata_Site']]=data.image_data['Intensity_LowerQuartileIntensity_DLC']
+            self.tracks=self.tracks.merge(self.image_data[['Metadata_Site', 'Intensity_LowerQuartileIntensity_DLC']], how='left', on='Metadata_Site')
         return self.tracks
     
     def interpolate_tracks(self):
@@ -130,15 +176,37 @@ class Experiment_data:
 #         self.tracks.loc[self.tracks.Metadata_Well.str.contains('B5'), 'Classifier']='10EGF_DLC'
 # =============================================================================
         self.tracks.loc[self.tracks.Metadata_Well.str.contains('C2'), 'Classifier']='hapto_CTRL'
-        self.tracks.loc[self.tracks.Metadata_Well.str.contains('C3'), 'Classifier']='hapto_CTRL'
+        self.tracks.loc[self.tracks.Metadata_Well.str.contains('C3'), 'Classifier']='chemo_CTRL'
         self.tracks.loc[self.tracks.Metadata_Well.str.contains('C4'), 'Classifier']='chemo_CTRL'
+    
 #        self.tracks.loc[self.tracks.Metadata_Well.str.contains('C4'), 'Classifier']='EGF+PDGF_CTRL'
 # =============================================================================
 #         self.tracks.loc[self.tracks.Metadata_Well.str.contains('C5'), 'Classifier']='10EGF_CTRL'
 #         self.tracks.loc[self.tracks.Metadata_Well.str.contains('D1'), 'Classifier']='hapto_Notrans'
 #         self.tracks.loc[self.tracks.Metadata_Well.str.contains('D2'), 'Classifier']='chemo_Notrans'        
 # =============================================================================
-        
+    def define_classifier(self):
+        self.tracks.loc[self.tracks.Metadata_Site < 11, 'Classifier']='Ctrl'
+        self.tracks.loc[(self.tracks['Metadata_Site'] > 10) & (self.tracks['Metadata_Site'] < 21), 'Classifier']='1B2'
+        self.tracks.loc[(self.tracks['Metadata_Site'] > 20) & (self.tracks['Metadata_Site'] < 31), 'Classifier']='Ctrl_FL'
+        self.tracks.loc[(self.tracks['Metadata_Site'] > 30) & (self.tracks['Metadata_Site'] < 41), 'Classifier']='1B2_FL'
 
 
-        
+    
+
+#%%
+adjust=[i for i in data3.tracks.columns if 'Intensity' in i]
+adjust.remove('Intensity_LowerQuartileIntensity_DLC')
+#%%df[~df.Team.str.match('Fin*')]
+for i in adjust:
+    data3.tracks=data3.tracks[~data3.tracks[i].str.contains('[a-zA-Z]')]
+    data3.tracks[i]=data3.tracks[i].astype('float64')-data3.tracks['Intensity_LowerQuartileIntensity_DLC']
+    
+#%%
+for i, row in image1.tracks.iterrows():
+    #print(row['Metadata_Site'], combined['Metadata_Site'] )
+    combined['image_intensity'][combined['Metadata_Site']==row['Metadata_Site']]=row['Intensity_LowerQuartileIntensity_DLC'] 
+#%%
+data.tracks['roundness']=data.tracks['AreaShape_MinorAxisLength']/data.tracks['AreaShape_MajorAxisLength']       
+#%%
+data.tracks.loc[(data.tracks['Metadata_Site'] > 10) & (data.tracks['Metadata_Site'] < 21), 'Classifier']='1B2'
