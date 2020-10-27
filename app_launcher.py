@@ -673,7 +673,7 @@ def plot_graph(n_clicks, graph_selector, classifier_choice,
     print('data where {} is less than {} are excluded'.format(custom_filter_dropdown, custom_filter_numeric))
     #if the current graph option is already stored in the graph storage, 
     #the stored graph will be displayed
-    if graph_selector in graph_storage.keys():
+    if graph_reuse=='yes' and graph_selector in graph_storage.keys():
         return graph_storage[graph_selector], graph_storage
     #oherwise the graph will be picked from the graph options dictionary, the figure will be created,
     #the graph_storage dictionary will be updated and the figure and updated dictionary will be returned
@@ -686,6 +686,7 @@ def plot_graph(n_clicks, graph_selector, classifier_choice,
                             distance_filter=distance_filter,
                             unique_time_selector=unique_time_selector, testmode=False)
         graph_storage.update({graph_selector:fig})
+        print(graph_selector,'updated')
         return fig, graph_storage
 
 #saving the graph to svg at same location as specified for datatable

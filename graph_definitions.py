@@ -20,7 +20,8 @@ import sys
 import math
 sys.path.append(os.path.realpath(__file__))
 import algorythm_definitions as AD
-
+from natsort import natsorted
+import seaborn as sns
 #%% Plots for the plot dictionary, that are based on data
 def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_column='',
              data_column='', distance_filter='', unique_time_selector='', testmode=False):
@@ -166,6 +167,7 @@ def boxplot(dat=[], classifier_column='', identifier_column='',
         
     X_column=data_column[0]
     Y_column=data_column[1]
+    
     #excluding rows where the data columns is 'None'
     #relevant for averaging
     dat=dat[dat[X_column]!='None']
@@ -174,11 +176,13 @@ def boxplot(dat=[], classifier_column='', identifier_column='',
     dat[X_column]=dat[X_column].astype(float)
     dat[Y_column]=dat[Y_column].astype(float)    
     classes=list(dat[classifier_column].astype('str').unique())
-    fig=make_subplots(rows=2, cols=1, subplot_titles=classes)
-
+    fig=make_subplots(rows=2, cols=1, subplot_titles=classifier_column)
+    #selecting color palette
+    colors=sns.color_palette('muted', len(classes)).as_hex()
     for xpos, i in enumerate(classes):
         fig.append_trace(trace=go.Box(
             y=dat.loc[dat[classifier_column]==i][Y_column],
+            line=dict(color=colors[xpos]),
             hovertext=dat.loc[dat[classifier_column]==i][unique_time_selector],
             customdata=[dat.loc[dat[classifier_column]==i][unique_time_selector]],
             name=i,
@@ -187,8 +191,9 @@ def boxplot(dat=[], classifier_column='', identifier_column='',
             row=1, col=1)
 
         
-    fig.update_layout(margin={'l': 40, 'b': 5, 't': 30, 'r': 200},
-            height=750, width=750)
+    fig.update_layout(margin={'l': 40, 'b': 5, 't': 30, 'r': 200}, 
+                      xaxis={'categoryorder':'array', 'categoryarray':natsorted(classes)},
+                      height=750, width=750)
 
     return fig
 

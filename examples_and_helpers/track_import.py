@@ -186,10 +186,10 @@ class Experiment_data:
 #         self.tracks.loc[self.tracks.Metadata_Well.str.contains('D2'), 'Classifier']='chemo_Notrans'        
 # =============================================================================
     def define_classifier(self):
-        self.tracks.loc[self.tracks.Metadata_Site < 11, 'Classifier']='Ctrl'
-        self.tracks.loc[(self.tracks['Metadata_Site'] > 10) & (self.tracks['Metadata_Site'] < 21), 'Classifier']='1B2'
-        self.tracks.loc[(self.tracks['Metadata_Site'] > 20) & (self.tracks['Metadata_Site'] < 31), 'Classifier']='Ctrl_FL'
-        self.tracks.loc[(self.tracks['Metadata_Site'] > 30) & (self.tracks['Metadata_Site'] < 41), 'Classifier']='1B2_FL'
+        self.tracks.loc[self.tracks.Metadata_Site < 10, 'Classifier']='Ctrl'
+        self.tracks.loc[(self.tracks['Metadata_Site'] >= 10) & (self.tracks['Metadata_Site'] < 20), 'Classifier']='1B2'
+        self.tracks.loc[(self.tracks['Metadata_Site'] >= 20) & (self.tracks['Metadata_Site'] < 30), 'Classifier']='Ctrl_FL'
+        self.tracks.loc[(self.tracks['Metadata_Site'] >= 30) & (self.tracks['Metadata_Site'] < 40), 'Classifier']='1B2_FL'
 
 
     
@@ -208,6 +208,7 @@ for i, row in image1.tracks.iterrows():
     combined['image_intensity'][combined['Metadata_Site']==row['Metadata_Site']]=row['Intensity_LowerQuartileIntensity_DLC'] 
 #%%
 data.tracks['roundness']=data.tracks['AreaShape_MinorAxisLength']/data.tracks['AreaShape_MajorAxisLength']       
+
 #%%
             self.tracks['Metadata_Timepoint']+=1
             for enum, i in enumerate(self.tracks['Metadata_Site'].astype('str')):
@@ -221,4 +222,13 @@ data.tracks['roundness']=data.tracks['AreaShape_MinorAxisLength']/data.tracks['A
                 self.tracks.loc[line, 'unique_id']='W'+self.tracks.loc[line, 'Metadata_Well']+\
                 '_'+'S'+str(self.tracks.loc[line, 'Metadata_Site'])+'_'+'E'+str(self.tracks.loc[line, 'track_id'])
 #%%
-data.tracks['unique_id']='W'+data.tracks['Classifier']+'_S'+data.tracks['Metadata_Site'].astype('str')+'_E'+data.tracks['index'].astype('str')
+data.tracks['unique_id']='S'+data.tracks['Metadata_Site'].astype('str')+'_E'+data.tracks['index'].astype('str')
+data.tracks['unique_time']=data.tracks['unique_id']+'_T'+data.tracks['Metadata_Timepoint'].astype('str')
+data.tracks['Time_Classifier']=data.tracks['Classifier']+'_t'+data.tracks['Metadata_Timepoint'].astype('str')
+#%%
+
+data.tracks['Metadata_Experiment']='SiDLC26'
+data.tracks['Time_Experiment_Classifier']=data.tracks['Time_Classifier']+'_E'+data.tracks['Metadata_Experiment']
+data.tracks['Experiment_Classifier']=data.tracks['Classifier']+'_E'+data.tracks['Metadata_Experiment']
+
+#%% combined tracks 
