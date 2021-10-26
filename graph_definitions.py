@@ -22,6 +22,7 @@ sys.path.append(os.path.realpath(__file__))
 import algorythm_definitions as AD
 from natsort import natsorted
 import seaborn as sns
+import random
 #%% Plots for the plot dictionary, that are based on data
 def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_column='',
              data_column='', distance_filter='', unique_time_selector='', testmode=False):
@@ -81,7 +82,7 @@ def lineplot(dat=[], classifier_column='', identifier_column='', timepoint_colum
         cells=list(dat_class[identifier_column].unique())
         print('...of class ', i, '...')
         if testmode==True:        
-            cells=cells[50:100]
+            cells=random.sample(cells, 300)
         #append the current classes name to the titles of the plot
 
 
@@ -196,80 +197,77 @@ def boxplot(dat=[], classifier_column='', identifier_column='',
                       height=750, width=750)
 
     return fig
-
 def time_series(dat=[], classifier_column='', identifier_column='', 
-                timepoint_column='', data_column='', distance_filter='', 
-                unique_time_selector='', testmode=False):
-    '''
-    testmode: If testomde is set to True only the first 10 items will be used in the graph
-    '''  
-    print('Creating time series')
-    #print(identifier_column)
-    #print(type(identifier_column))
-    #cells=list(dat[identifier_column].unique())
-    dat[unique_time_selector]=dat[identifier_column]+'_T'+dat[timepoint_column].astype('str')
-
-    classes=list(dat[classifier_column].unique())
-    Y_column=data_column[0]
-    X_column=timepoint_column
-    max_x=dat[X_column].max()
-    min_x=dat[X_column].min()
-    max_y=dat[Y_column].max()
-    min_y=dat[Y_column].min()
-    #initiating traces as a list
-    #getting trace IDs from unique IDs (cells)
-    print('looping through cells...')
-    #getting the number of rows for suplots based on the amount of classes
-    row_n=len(classes)
-
-    rowlist=np.arange(1, row_n+1, 1)
-
-        #defining subplot layout
-    fig=make_subplots(rows=row_n, cols=1, subplot_titles=classes)
-    r_i=0
-
-    #looping through the clases
-    for i in classes:
-        #subsetting the data by the class
-        dat_class=dat.loc[dat[classifier_column]==i]
-        #getting only the cells from that class
-        cells=list(dat_class[identifier_column].unique())
-        print('...of class ', i, '...')
-        if testmode==True:        
-            cells=cells[0:50]
-        #append the current classes name to the titles of the plot
-
-
-    #looping through the cells
-        for c in cells:               
-            #appending x, y data based on current cell to the list of traces
-            fig.append_trace(trace=go.Scatter(
-            #getting x values
-            x=dat_class.loc[dat_class[identifier_column]==c][X_column],
-            #getting y values
-            y=dat_class.loc[dat_class[identifier_column]==c][Y_column],
-            #getting unique ID
-            hovertext=dat_class.loc[dat_class[identifier_column]==c][unique_time_selector],
-            customdata=[dat_class.loc[dat_class[identifier_column]==c][unique_time_selector]],
-            name=c,),
-            row=int(rowlist[math.floor(r_i)]) , col=1)
-    
-
-
-        fig.update_yaxes(range=[min_y*1.05, max_y*1.05], row=int(rowlist[math.floor(r_i)]), col=1)
-        fig.update_xaxes(range=[min_x*1.05, max_x*1.05], row=int(rowlist[math.floor(r_i)]), col=1)    
-        #adding 1 to the row indicator, so that every class will be 
-        #plottet in a new row
-        r_i+=1
-
-    fig.update_layout(margin={'l': 40, 'b': 5, 't': 30, 'r': 40},
-            height=row_n*375, width=750)
-    fig.update_layout({'clickmode':'event+select'})
-
-
-    print('...done')
-    return fig
-
+                 timepoint_column='', data_column='', distance_filter='', 
+                 unique_time_selector='', testmode=False):
+     '''
+     testmode: If testomde is set to True only the first 10 items will be used in the graph
+     '''  
+     print('Creating time series')
+     testmode=False
+     print('testmode =', testmode)
+     #print(identifier_column)
+     #print(type(identifier_column))
+     #cells=list(dat[identifier_column].unique())
+     dat[unique_time_selector]=dat[identifier_column]+'_T'+dat[timepoint_column].astype('str')
+ 
+     classes=list(dat[classifier_column].unique())
+     Y_column=data_column[1]
+     X_column=timepoint_column
+     print('y_column: ', Y_column)
+     print('x_column: ',X_column)
+     max_x=dat[X_column].max()
+     min_x=dat[X_column].min()
+     max_y=dat[Y_column].max()
+     min_y=dat[Y_column].min()
+     #initiating traces as a list
+     #getting trace IDs from unique IDs (cells)
+     print('looping through cells...')
+     #getting the number of rows for suplots based on the amount of classes
+     row_n=len(classes)
+ 
+     colors=sns.color_palette('muted', len(classes)).as_hex()
+     #looping through the clases
+     for c, i in enumerate(classes):
+         #subsetting the data by the class
+         dat_class=dat.loc[dat[classifier_column]==i]
+         if testmode==True:
+             dat_class=dat_class[0:10]
+         
+       
+         print('...of class ', i, '...')
+         
+         new_col=colors[c]
+         print('subsetting by', Y_column)
+         y1=dat_class[Y_column]
+         median=dat_class.groupby(timepoint_column)[Y_column].median()
+         print('calculating std')
+         x_value = list(median.index.values+1)
+         y1_upper=median + dat_class.groupby(timepoint_column)[Y_column].std()
+         y1_lower = median - dat_class.groupby(timepoint_column)[Y_column].std()
+         y1_lower = y1_lower[::-1]
+         #standard deviation area
+         print('adding std traces')
+         fig.add_traces(go.Scatter(x=x_value+x_value[::-1],
+                                   y=y1_upper+y1_lower,
+                                   fill='tozerox',
+                                   fillcolor=new_col,
+                                   line=dict(color='rgba(255,255,255,0)'),
+                                   name=i+'std'
+                                   ))
+         print('adding line traces')
+         fig.add_traces(go.Scatter(x=x_value,
+                                   y=median,
+                                   line=dict(color=new_col, width=2.5),
+                                   mode='lines',
+                                   name=i))
+     fig.update_layout(margin={'l': 40, 'b': 5, 't': 30, 'r': 40},
+     height=row_n*375, width=750)
+     fig.update_layout({'clickmode':'event+select'})
+ 
+ 
+     print('...done')
+     return fig
 #%%
 
 def corel_plot(dat=[], classifier_column='', identifier_column='', 
@@ -475,3 +473,81 @@ def image_graph(img, x_C=1024, y_C=1024, image_info=[0, 0, 0], ID=''):
     return fig
 
 #/Volumes/imaging.data/Max/REF52/beta_pix/pix_10/cp.out1/output/    
+    
+#%% old time series, revisite later
+# =============================================================================
+# def time_series(dat=[], classifier_column='', identifier_column='', 
+#                 timepoint_column='', data_column='', distance_filter='', 
+#                 unique_time_selector='', testmode=False):
+#     '''
+#     testmode: If testomde is set to True only the first 10 items will be used in the graph
+#     '''  
+#     print('Creating time series')
+#     #print(identifier_column)
+#     #print(type(identifier_column))
+#     #cells=list(dat[identifier_column].unique())
+#     dat[unique_time_selector]=dat[identifier_column]+'_T'+dat[timepoint_column].astype('str')
+# 
+#     classes=list(dat[classifier_column].unique())
+#     Y_column=data_column[0]
+#     X_column=timepoint_column
+#     max_x=dat[X_column].max()
+#     min_x=dat[X_column].min()
+#     max_y=dat[Y_column].max()
+#     min_y=dat[Y_column].min()
+#     #initiating traces as a list
+#     #getting trace IDs from unique IDs (cells)
+#     print('looping through cells...')
+#     #getting the number of rows for suplots based on the amount of classes
+#     row_n=len(classes)
+# 
+#     rowlist=np.arange(1, row_n+1, 1)
+# 
+#         #defining subplot layout
+#     fig=make_subplots(rows=row_n, cols=1, subplot_titles=classes)
+#     r_i=0
+# 
+#     #looping through the clases
+#     for i in classes:
+#         #subsetting the data by the class
+#         dat_class=dat.loc[dat[classifier_column]==i]
+#         #getting only the cells from that class
+#         cells=list(dat_class[identifier_column].unique())
+#         print('...of class ', i, '...')
+#         if testmode==True:        
+#             cells=cells[0:50]
+#         #append the current classes name to the titles of the plot
+# 
+# 
+#     #looping through the cells
+#         for c in cells:               
+#             #appending x, y data based on current cell to the list of traces
+#             fig.append_trace(trace=go.Scatter(
+#             #getting x values
+#             x=dat_class.loc[dat_class[identifier_column]==c][X_column],
+#             #getting y values
+#             y=dat_class.loc[dat_class[identifier_column]==c][Y_column],
+#             #getting unique ID
+#             hovertext=dat_class.loc[dat_class[identifier_column]==c][unique_time_selector],
+#             customdata=[dat_class.loc[dat_class[identifier_column]==c][unique_time_selector]],
+#             name=c,),
+#             row=int(rowlist[math.floor(r_i)]) , col=1)
+#     
+# 
+# 
+#         fig.update_yaxes(range=[min_y*1.05, max_y*1.05], row=int(rowlist[math.floor(r_i)]), col=1)
+#         fig.update_xaxes(range=[min_x*1.05, max_x*1.05], row=int(rowlist[math.floor(r_i)]), col=1)    
+#         #adding 1 to the row indicator, so that every class will be 
+#         #plottet in a new row
+#         r_i+=1
+# 
+#     fig.update_layout(margin={'l': 40, 'b': 5, 't': 30, 'r': 40},
+#             height=row_n*375, width=750)
+#     fig.update_layout({'clickmode':'event+select'})
+# 
+# 
+#     print('...done')
+#     return fig
+# =============================================================================
+
+    

@@ -1,0 +1,2 @@
+(?P<Site_ID>S[0-9]{2})(?P<TrackID>_E[0-9]+)(?P<Timepoint>_T[0-9]+)
+LA_Timelapse_T10_XY02_GFPS02_T10.png
