@@ -398,9 +398,9 @@ def update_images(n_clicks, folder, pattern_storage):
     find_dir='overlays'
     print('pattern storage: ', pattern_storage)
     #gets the pattern of the trackid from the input pattern
-    trackid_pattern=re.compile(r'\(\?P\<TrackID\>(.*)\)')
+    trackid_pattern=re.compile(r'\(\?P\<TrackID\>.*?(?=\))')
     #removes the trackid pattern from the pattern to find images
-    pattern=pattern_storage[0].replace(re.search(trackid_pattern, pattern_storage[0]).group(), '') 
+    pattern=pattern_storage[0].replace(re.search(trackid_pattern, pattern_storage[0]).group()+')', '') 
     print('Image_Pattern', pattern)
     #finding only png files
     png_find=re.compile('.png')
@@ -411,7 +411,7 @@ def update_images(n_clicks, folder, pattern_storage):
     print(key_pattern)
     #key_pattern=re.compile('W[A-Z][0-9]_S[0-9]+_T[0-9]+')
     for root, dirs, files in os.walk(folder):
-        print(dirs)
+        #print(dirs)
     #looks in each folder from given path
     #if folder is matching the KD pattern, the find_dir pattern and
     #if there are csv files
@@ -741,7 +741,7 @@ def update_image_overlay(hoverData, image_dict,
     except TypeError:
         print('Error: no pattern has been submitted')
     #Error message if no images have been uploaded
-    if type(image_dict)!= None or len(image_dict)==0:
+    if type(image_dict)== None or len(image_dict)==0:
         print('No images have been uploaded')
     #read data from flag_storage if exists    
     if flag_storage != None:
